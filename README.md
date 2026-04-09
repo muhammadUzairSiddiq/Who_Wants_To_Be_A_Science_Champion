@@ -1,2 +1,2 @@
-# Who_Wants_To_Be_A_Science_Champion
+# The_Quiz_Master_Challenge
 an education app
