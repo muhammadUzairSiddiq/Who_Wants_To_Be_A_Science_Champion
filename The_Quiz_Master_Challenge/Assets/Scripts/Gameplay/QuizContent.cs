@@ -217,4 +217,25 @@ public static class QuizContent
         if (forcedSlotIndex >= 0 && forcedSlotIndex < pool.Length) return pool[forcedSlotIndex];
         return pool[UnityEngine.Random.Range(0, pool.Length)];
     }
+
+    /// <summary>Random question in the category, avoiding the same stem as <paramref name="previous"/> when the pool has more than one item.</summary>
+    public static QuizQuestionData GetRandomForCategoryAvoiding(string quizId, int forcedSlotIndex, QuizQuestionData previous)
+    {
+        var pool = GetPoolForCategory(quizId);
+        if (pool == null || pool.Length == 0) return FallbackQuestion;
+        if (forcedSlotIndex >= 0 && forcedSlotIndex < pool.Length) return pool[forcedSlotIndex];
+        if (previous == null || pool.Length < 2) return pool[UnityEngine.Random.Range(0, pool.Length)];
+
+        QuizQuestionData pick = null;
+        for (var attempt = 0; attempt < 24; attempt++)
+        {
+            pick = pool[UnityEngine.Random.Range(0, pool.Length)];
+            if (!SameQuestionStem(pick, previous)) return pick;
+        }
+
+        return pick;
+    }
+
+    static bool SameQuestionStem(QuizQuestionData a, QuizQuestionData b) =>
+        a != null && b != null && string.Equals(a.Question, b.Question, StringComparison.Ordinal);
 }
