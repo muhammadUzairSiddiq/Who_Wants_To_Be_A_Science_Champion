@@ -98,8 +98,9 @@ public class GameplaySceneController : MonoBehaviour
     {
         if (teamsDetailsRoot == null)
         {
-            var t = transform.Find("Main/TEAMS DETAILS");
-            if (t != null) teamsDetailsRoot = t;
+            teamsDetailsRoot = transform.Find("Main/TEAMS DETAILS");
+            if (teamsDetailsRoot == null)
+                teamsDetailsRoot = transform.Find("Main/Team Panel");
         }
 
         if (categoryLabel == null)
@@ -115,6 +116,8 @@ public class GameplaySceneController : MonoBehaviour
             backButton = transform.Find("Main/Back Button")?.GetComponent<Button>();
 
         var optionRoot = transform.Find("Main/OPTION BUTTONS");
+        if (optionRoot == null)
+            optionRoot = transform.Find("Main");
         if (optionRoot != null)
         {
             var names = new[] { "Option A", "Option B", "Option C", "Option D" };
@@ -131,15 +134,35 @@ public class GameplaySceneController : MonoBehaviour
         }
 
         var lifeRoot = transform.Find("Main/LIFELINE BUTTONS");
+        if (lifeRoot == null)
+            lifeRoot = transform.Find("Main/Lifeline Panel");
         if (lifeRoot != null)
         {
             if (lifeline5050Button == null)
-                lifeline5050Button = lifeRoot.Find("Lifeline 50 50 Button")?.GetComponent<Button>();
+                lifeline5050Button = FindLifelineButton(lifeRoot, "Lifeline 50 50 Button");
             if (lifelineAudienceButton == null)
-                lifelineAudienceButton = lifeRoot.Find("Ask audience Button")?.GetComponent<Button>();
+                lifelineAudienceButton = FindLifelineButton(lifeRoot, "Ask audience Button");
             if (lifelinePhoneButton == null)
-                lifelinePhoneButton = lifeRoot.Find("Call A Friend Button")?.GetComponent<Button>();
+                lifelinePhoneButton = FindLifelineButton(lifeRoot, "Call A Friend Button");
         }
+    }
+
+    static Button FindLifelineButton(Transform lifeRoot, string objectName)
+    {
+        var direct = lifeRoot.Find(objectName);
+        if (direct != null)
+        {
+            var b = direct.GetComponent<Button>();
+            if (b != null) return b;
+        }
+
+        foreach (var btn in lifeRoot.GetComponentsInChildren<Button>(true))
+        {
+            if (btn.gameObject.name == objectName)
+                return btn;
+        }
+
+        return null;
     }
 
     void WireBackButton()
@@ -171,7 +194,7 @@ public class GameplaySceneController : MonoBehaviour
             if (!viaTeam)
                 show = false;
             else
-                show = selected.Count == 0 || selected.Contains((char)('A' + i));
+                show = selected.Count > 0 && selected.Contains((char)('A' + i));
             teamsDetailsRoot.GetChild(i).gameObject.SetActive(show);
         }
     }
