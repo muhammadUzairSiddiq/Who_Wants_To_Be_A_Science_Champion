@@ -3,10 +3,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-/// <summary>
-/// Login data, roll parsing, and per-student coin storage (PlayerPrefs).
-/// Profile key uses the full saved roll string so year–class–roll stays unique.
-/// </summary>
 public static class StudentCredentials
 {
     public const string PrefsSelectedQuizKey = "QuizMaster_SelectedQuizType";
@@ -22,7 +18,6 @@ public static class StudentCredentials
     public static string GetSavedRollRaw() =>
         PlayerPrefs.GetString(LoginSceneController.PrefsRollNumberKey, string.Empty);
 
-    /// <summary>Stable id for coin storage (sanitized roll).</summary>
     public static string GetProfileStorageKey()
     {
         var roll = GetSavedRollRaw().Trim();
@@ -60,7 +55,6 @@ public static class StudentCredentials
         return true;
     }
 
-    /// <summary>UI line for the Class field, e.g. "Class: 9th". Uses middle segment when structured.</summary>
     public static string GetClassDisplayLine(string rollRaw)
     {
         if (TryParseStructuredRoll(rollRaw, out _, out int cls, out _))
@@ -68,7 +62,6 @@ public static class StudentCredentials
         return "Class: —";
     }
 
-    /// <summary>Shown near profile; structured rolls show the last segment (e.g. 004).</summary>
     public static string GetActualRollDisplay(string rollRaw)
     {
         if (TryParseStructuredRoll(rollRaw, out _, out _, out var tail))

@@ -1,15 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Menu: profile from login, coins, Quick/Team flows, quiz pick + loading overlay to Gameplay.
-/// Attach to Canvas; references optional (resolved by hierarchy names).
-/// </summary>
 [DisallowMultipleComponent]
 public class MenuSceneController : MonoBehaviour
 {
@@ -216,7 +211,8 @@ public class MenuSceneController : MonoBehaviour
             return;
         }
 
-        var encoded = string.Join(",", selected.OrderBy(c => c));
+        selected.Sort();
+        var encoded = string.Join(",", selected);
         PlayerPrefs.SetString(StudentCredentials.PrefsSelectedTeamsKey, encoded);
         PlayerPrefs.SetInt(StudentCredentials.PrefsViaTeamPlayKey, 1);
         PlayerPrefs.Save();
@@ -321,6 +317,7 @@ public class MenuSceneController : MonoBehaviour
 
         _loadingRoot = overlay;
         overlay.SetActive(false);
+        GetComponent<UIButtonClickFeedback>()?.RegisterNewButtonsInHierarchy();
     }
 
     static void StretchFull(RectTransform rt)
@@ -411,6 +408,7 @@ public class MenuSceneController : MonoBehaviour
         messageDialogRoot = root;
         root.SetActive(false);
         messageDialogOkButton.onClick.AddListener(HideMessageDialog);
+        GetComponent<UIButtonClickFeedback>()?.RegisterNewButtonsInHierarchy();
     }
 
     void ShowMessageDialog(string msg)

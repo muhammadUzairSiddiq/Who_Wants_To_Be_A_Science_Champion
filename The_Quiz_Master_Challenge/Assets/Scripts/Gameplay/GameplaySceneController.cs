@@ -6,9 +6,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Gameplay: teams, category, timer, questions with typewriter, lifelines, continuous play until time up.
-/// </summary>
 [DisallowMultipleComponent]
 public class GameplaySceneController : MonoBehaviour
 {
@@ -29,7 +26,6 @@ public class GameplaySceneController : MonoBehaviour
     [SerializeField] float questionStepDelay = 0.18f;
     [SerializeField] TypewriterStepMode optionTypewriterMode = TypewriterStepMode.Characters;
     [SerializeField] float optionStepDelay = 0.07f;
-    [Tooltip("If 0–4, always use that slot from the category pool (debug). -1 = random each round.")]
     [SerializeField] int forceQuestionSlot = -1;
 
     [Header("Colours")]
@@ -464,6 +460,7 @@ public class GameplaySceneController : MonoBehaviour
         _lifelinePromptOkButton.onClick.AddListener(HideLifelinePrompt);
         _lifelinePromptRoot = root;
         root.SetActive(false);
+        GetComponent<UIButtonClickFeedback>()?.RegisterNewButtonsInHierarchy();
     }
 
     IEnumerator TimerRoutine()
@@ -652,6 +649,7 @@ public class GameplaySceneController : MonoBehaviour
         _timeUpMenuButton.onClick.AddListener(GoToMenu);
         _timeUpRoot = root;
         root.SetActive(false);
+        GetComponent<UIButtonClickFeedback>()?.RegisterNewButtonsInHierarchy();
     }
 
     static void StretchFull(RectTransform rt)

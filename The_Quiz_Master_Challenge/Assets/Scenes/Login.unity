@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 177552041}
   - component: {fileID: 177552040}
   - component: {fileID: 987654001}
+  - component: {fileID: 987654002}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -876,6 +877,28 @@ MonoBehaviour:
   validationDialogRoot: {fileID: 0}
   validationMessageText: {fileID: 0}
   validationOkButton: {fileID: 0}
+--- !u!114 &987654002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177552039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1e2d3c4b5a6478091a2b3c4d5e6f701, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonClickFeedback
+  punchScale: 1.14
+  punchHalfDuration: 0.075
+  smallPopupFontSize: 42
+  largePopupFontSize: 72
+  largeEffectChance: 0.35
+  popupColor: {r: 1, g: 0.95, b: 0.4, a: 1}
+  popupLifetime: 0.85
+  popupRisePixels: 120
+  flashColor: {r: 1, g: 1, b: 1, a: 0.12}
+  flashDuration: 0.14
 --- !u!1 &1089223788
 GameObject:
   m_ObjectHideFlags: 0

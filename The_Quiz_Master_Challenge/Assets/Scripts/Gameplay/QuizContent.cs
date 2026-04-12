@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 
-/// <summary>Hardcoded quiz items until data-driven loading is added.</summary>
 [Serializable]
 public class QuizQuestionData
 {
@@ -209,7 +208,6 @@ public static class QuizContent
         }
     }
 
-    /// <param name="forcedSlotIndex">If 0–4, use that index in the pool (debug). Otherwise random.</param>
     public static QuizQuestionData GetRandomForCategory(string quizId, int forcedSlotIndex = -1)
     {
         var pool = GetPoolForCategory(quizId);
@@ -218,7 +216,6 @@ public static class QuizContent
         return pool[UnityEngine.Random.Range(0, pool.Length)];
     }
 
-    /// <summary>Random question in the category, avoiding the same stem as <paramref name="previous"/> when the pool has more than one item.</summary>
     public static QuizQuestionData GetRandomForCategoryAvoiding(string quizId, int forcedSlotIndex, QuizQuestionData previous)
     {
         var pool = GetPoolForCategory(quizId);

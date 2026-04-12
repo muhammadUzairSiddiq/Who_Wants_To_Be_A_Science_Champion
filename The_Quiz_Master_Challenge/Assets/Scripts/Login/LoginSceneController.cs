@@ -4,11 +4,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Login validation, PlayerPrefs storage, and navigation to Menu scene.
-/// Assign references in the inspector or rely on auto-find for objects named
-/// "Name InputField", "Roll Number  InputField", "Proceed Button" on this scene.
-/// </summary>
 public class LoginSceneController : MonoBehaviour
 {
     public const string PrefsStudentNameKey = "QuizMaster_Login_StudentName";
@@ -302,6 +297,7 @@ public class LoginSceneController : MonoBehaviour
         validationDialogRoot = overlay;
         validationMessageText = msg;
         validationOkButton = btn;
+        canvas.GetComponent<UIButtonClickFeedback>()?.RegisterNewButtonsInHierarchy();
     }
 
     static void StretchFull(RectTransform rt)
