@@ -171,7 +171,11 @@ public class GameplaySceneController : MonoBehaviour
 
         for (var i = 0; i < 4 && i < teamsDetailsRoot.childCount; i++)
         {
-            var show = !viaTeam || selected.Count == 0 || selected.Contains((char)('A' + i));
+            bool show;
+            if (!viaTeam)
+                show = false;
+            else
+                show = selected.Count == 0 || selected.Contains((char)('A' + i));
             teamsDetailsRoot.GetChild(i).gameObject.SetActive(show);
         }
     }
