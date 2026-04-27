@@ -1,225 +1,128 @@
-using System.Text.RegularExpressions;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class LoginSceneController : MonoBehaviour
+public class TeachersLoginSceneController : MonoBehaviour
 {
-    public const string PrefsStudentNameKey = "QuizMaster_Login_StudentName";
-    public const string PrefsRollNumberKey = "QuizMaster_Login_RollNumber";
-
     [Header("UI (optional — auto-filled if empty)")]
-    [SerializeField] TMP_InputField nameInputField;
-    [SerializeField] TMP_InputField rollInputField;
+    [SerializeField] TMP_InputField usernameField;
+    [SerializeField] TMP_InputField passwordField;
     [SerializeField] Button proceedButton;
+    [SerializeField] Button studentPortalButton;
 
     [Header("Navigation")]
-    [SerializeField] string menuSceneName = "Menu";
+    [SerializeField] string loginSceneName = "Login";
+    [SerializeField] string dashboardSceneName = "Dashboard";
 
-    [Header("Teacher portal")]
-    [SerializeField] Button teacherPortalButton;
-    [SerializeField] string teachersLoginSceneName = "TeachersLogin";
-
-    [Header("Name rules")]
-    [SerializeField] int minNameLength = 3;
-    [SerializeField] int maxNameLength = 64;
-    [Tooltip("Letters (any language), spaces, apostrophe, period, hyphen.")]
-    [SerializeField] string nameValidationPattern = @"^[\p{L}][\p{L}\s'.-]{2,}$";
-
-    [Header("Roll number (configure in editor)")]
-    [Tooltip("Primary format e.g. 2024-09-005")]
-    [SerializeField] string strictRollRegex = @"^\d{4}-\d{2}-\d{3}$";
-    [SerializeField] bool allowSimpleRollFormat = true;
-    [Tooltip("Fallback: digits-only roll, e.g. 2409005 or 0915")]
-    [SerializeField] string simpleRollRegex = @"^\d{3,15}$";
+    [Header("Credentials (case-insensitive)")]
+    [SerializeField] string validUsername = "admin";
+    [SerializeField] string validPassword = "admin";
 
     [Header("Dialog (leave empty to build at runtime)")]
     [SerializeField] GameObject validationDialogRoot;
     [SerializeField] TMP_Text validationMessageText;
     [SerializeField] Button validationOkButton;
 
-    Regex _nameRx;
-    Regex _strictRollRx;
-    Regex _simpleRollRx;
-
     void Awake()
     {
-        TryCompileRegexes();
         AutoWireReferences();
         EnsureValidationDialog();
         if (proceedButton == null)
         {
-            Debug.LogError("LoginSceneController: Proceed Button not found. Assign it or name the object \"Proceed Button\".");
+            Debug.LogError("TeachersLoginSceneController: Proceed Button not found. Assign it or name the object \"Proceed Button\".");
             enabled = false;
             return;
         }
+
         proceedButton.onClick.AddListener(OnProceedClicked);
+        if (studentPortalButton != null)
+            studentPortalButton.onClick.AddListener(OnStudentPortalClicked);
         if (validationOkButton != null)
             validationOkButton.onClick.AddListener(HideValidationDialog);
-        WireTeacherPortalButton();
-    }
-
-    void Start()
-    {
-        LoadSavedCredentialsIntoFields();
     }
 
     void OnDestroy()
     {
         if (proceedButton != null)
             proceedButton.onClick.RemoveListener(OnProceedClicked);
+        if (studentPortalButton != null)
+            studentPortalButton.onClick.RemoveListener(OnStudentPortalClicked);
         if (validationOkButton != null)
             validationOkButton.onClick.RemoveListener(HideValidationDialog);
-        if (teacherPortalButton != null)
-            teacherPortalButton.onClick.RemoveListener(OnTeacherPortalClicked);
-    }
-
-    void TryCompileRegexes()
-    {
-        try { _nameRx = new Regex(nameValidationPattern, RegexOptions.CultureInvariant); }
-        catch { _nameRx = null; Debug.LogWarning("LoginSceneController: invalid nameValidationPattern."); }
-
-        try { _strictRollRx = new Regex(strictRollRegex, RegexOptions.CultureInvariant); }
-        catch { _strictRollRx = null; Debug.LogWarning("LoginSceneController: invalid strictRollRegex."); }
-
-        try { _simpleRollRx = new Regex(simpleRollRegex, RegexOptions.CultureInvariant); }
-        catch { _simpleRollRx = null; Debug.LogWarning("LoginSceneController: invalid simpleRollRegex."); }
     }
 
     void AutoWireReferences()
     {
-        if (nameInputField == null)
+        if (usernameField == null)
         {
-            var go = GameObject.Find("Name InputField");
-            if (go != null) nameInputField = go.GetComponent<TMP_InputField>();
+            var go = GameObject.Find("Email InputField");
+            if (go != null) usernameField = go.GetComponent<TMP_InputField>();
         }
-        if (rollInputField == null)
+
+        if (passwordField == null)
         {
-            var go = GameObject.Find("Roll Number  InputField");
-            if (go != null) rollInputField = go.GetComponent<TMP_InputField>();
+            var go = GameObject.Find("Password  InputField");
+            if (go == null) go = GameObject.Find("Password InputField");
+            if (go != null) passwordField = go.GetComponent<TMP_InputField>();
         }
+
         if (proceedButton == null)
         {
             var go = GameObject.Find("Proceed Button");
             if (go != null) proceedButton = go.GetComponent<Button>();
         }
-        if (teacherPortalButton == null)
+
+        if (studentPortalButton == null)
         {
-            var go = GameObject.Find("Teacher portal Button");
-            if (go != null) teacherPortalButton = go.GetComponent<Button>();
+            var go = GameObject.Find("Student portal Button");
+            if (go != null) studentPortalButton = go.GetComponent<Button>();
         }
     }
 
-    void WireTeacherPortalButton()
+    void OnStudentPortalClicked()
     {
-        if (teacherPortalButton != null)
-            teacherPortalButton.onClick.AddListener(OnTeacherPortalClicked);
-    }
-
-    void OnTeacherPortalClicked()
-    {
-        if (string.IsNullOrEmpty(teachersLoginSceneName))
+        if (string.IsNullOrEmpty(loginSceneName))
         {
-            ShowValidationDialog("Teachers login scene name is not set on LoginSceneController.");
+            ShowValidationDialog("Login scene name is not set on TeachersLoginSceneController.");
             return;
         }
 
-        SceneManager.LoadScene(teachersLoginSceneName);
-    }
-
-    void LoadSavedCredentialsIntoFields()
-    {
-        if (nameInputField == null || rollInputField == null) return;
-
-        var savedName = PlayerPrefs.GetString(PrefsStudentNameKey, string.Empty);
-        var savedRoll = PlayerPrefs.GetString(PrefsRollNumberKey, string.Empty);
-        if (!string.IsNullOrEmpty(savedName))
-            nameInputField.text = savedName;
-        if (!string.IsNullOrEmpty(savedRoll))
-            rollInputField.text = savedRoll;
+        SceneManager.LoadScene(loginSceneName);
     }
 
     void OnProceedClicked()
     {
-        var name = nameInputField != null ? nameInputField.text.Trim() : string.Empty;
-        var roll = rollInputField != null ? rollInputField.text.Trim() : string.Empty;
+        var user = usernameField != null ? usernameField.text.Trim() : string.Empty;
+        var pass = passwordField != null ? passwordField.text.Trim() : string.Empty;
 
-        if (!TryValidateName(name, out var nameError))
+        if (string.IsNullOrEmpty(user))
         {
-            ShowValidationDialog(nameError);
-            return;
-        }
-        if (!TryValidateRoll(roll, out var rollError))
-        {
-            ShowValidationDialog(rollError);
+            ShowValidationDialog("Please enter your username.");
             return;
         }
 
-        PlayerPrefs.SetString(PrefsStudentNameKey, name);
-        PlayerPrefs.SetString(PrefsRollNumberKey, roll);
-        PlayerPrefs.Save();
-
-        if (string.IsNullOrEmpty(menuSceneName))
+        if (string.IsNullOrEmpty(pass))
         {
-            ShowValidationDialog("Menu scene name is not set on LoginSceneController.");
+            ShowValidationDialog("Please enter your password.");
             return;
         }
 
-        SceneManager.LoadScene(menuSceneName);
-    }
-
-    bool TryValidateName(string name, out string error)
-    {
-        error = null;
-        if (string.IsNullOrEmpty(name))
+        if (!string.Equals(user, validUsername?.Trim() ?? string.Empty, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(pass, validPassword ?? string.Empty, StringComparison.OrdinalIgnoreCase))
         {
-            error = "Please enter your name.";
-            return false;
-        }
-        if (name.Length < minNameLength)
-        {
-            error = $"Name must be at least {minNameLength} characters.";
-            return false;
-        }
-        if (name.Length > maxNameLength)
-        {
-            error = $"Name must be at most {maxNameLength} characters.";
-            return false;
-        }
-        if (_nameRx != null && !_nameRx.IsMatch(name))
-        {
-            error = "Name can only contain letters, spaces, and . ' - (and must start with a letter).";
-            return false;
-        }
-        return true;
-    }
-
-    bool TryValidateRoll(string roll, out string error)
-    {
-        error = null;
-        if (string.IsNullOrEmpty(roll))
-        {
-            error = "Please enter your roll number.";
-            return false;
+            ShowValidationDialog("Invalid username or password.");
+            return;
         }
 
-        if (_strictRollRx != null && _strictRollRx.IsMatch(roll))
-            return true;
+        if (string.IsNullOrEmpty(dashboardSceneName))
+        {
+            ShowValidationDialog("Dashboard scene name is not set on TeachersLoginSceneController.");
+            return;
+        }
 
-        if (allowSimpleRollFormat && _simpleRollRx != null && _simpleRollRx.IsMatch(roll))
-            return true;
-
-        error = BuildRollFormatHint();
-        return false;
-    }
-
-    string BuildRollFormatHint()
-    {
-        return "Roll number format is invalid.\n\n" +
-               "Use the full format: Year-Class-Roll (example: 2024-09-005),\n" +
-               "or a simple numeric roll (" + (simpleRollRegex ?? "") + ").\n\n" +
-               "You can change the allowed patterns on the LoginSceneController in the Inspector.";
+        SceneManager.LoadScene(dashboardSceneName);
     }
 
     void EnsureValidationDialog()
@@ -230,13 +133,13 @@ public class LoginSceneController : MonoBehaviour
         var canvas = FindFirstObjectByType<Canvas>();
         if (canvas == null)
         {
-            Debug.LogError("LoginSceneController: No Canvas found — cannot create validation dialog.");
+            Debug.LogError("TeachersLoginSceneController: No Canvas found — cannot create validation dialog.");
             return;
         }
 
         var white = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 100f);
 
-        var overlay = new GameObject("ValidationOverlay", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
+        var overlay = new GameObject("TeacherValidationOverlay", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
         overlay.transform.SetParent(canvas.transform, false);
         overlay.SetActive(false);
 
@@ -274,7 +177,7 @@ public class LoginSceneController : MonoBehaviour
         var titleGo = new GameObject("Title", typeof(TextMeshProUGUI));
         titleGo.transform.SetParent(panelGo.transform, false);
         var title = titleGo.GetComponent<TextMeshProUGUI>();
-        title.text = "Check your details";
+        title.text = "Teacher portal";
         title.fontSize = 26f;
         title.alignment = TextAlignmentOptions.Center;
         title.color = new Color(1f, 0.92f, 0.65f);

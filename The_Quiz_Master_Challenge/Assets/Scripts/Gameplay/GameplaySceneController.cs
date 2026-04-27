@@ -68,6 +68,9 @@ public class GameplaySceneController : MonoBehaviour
     bool _audienceUsedThisQuestion;
     bool _phoneUsedThisQuestion;
 
+    int _sessionCorrectCount;
+    bool _lastAnswerWasCorrect;
+
     void Awake()
     {
         ResolveReferences();
@@ -80,7 +83,8 @@ public class GameplaySceneController : MonoBehaviour
     void Start()
     {
         _quizCategoryId = PlayerPrefs.GetString(StudentCredentials.PrefsSelectedQuizKey, "Math");
-        _activeQuestion = QuizContent.GetRandomForCategory(_quizCategoryId, forceQuestionSlot);
+        _sessionCorrectCount = 0;
+        _activeQuestion = QuizContent.GetRandomForCategoryWithProgress(_quizCategoryId, _sessionCorrectCount, forceQuestionSlot, null);
         _introCoroutine = StartCoroutine(IntroTypewriterRoutine());
     }
 
@@ -549,6 +553,7 @@ public class GameplaySceneController : MonoBehaviour
         SetLifelineButtonsInteractable(false);
 
         var correct = index == correctIndex;
+        _lastAnswerWasCorrect = correct;
         for (var i = 0; i < 4; i++)
         {
             if (optionImages[i] == null) continue;
@@ -573,7 +578,10 @@ public class GameplaySceneController : MonoBehaviour
                 optionImages[i].color = _optionBaseImageColors[i];
         }
 
-        _activeQuestion = QuizContent.GetRandomForCategoryAvoiding(_quizCategoryId, forceQuestionSlot, _activeQuestion);
+        if (_lastAnswerWasCorrect)
+            _sessionCorrectCount++;
+
+        _activeQuestion = QuizContent.GetRandomForCategoryWithProgress(_quizCategoryId, _sessionCorrectCount, forceQuestionSlot, _activeQuestion);
         _introComplete = false;
 
         if (_introCoroutine != null)

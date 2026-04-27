@@ -83,7 +83,12 @@ public class UIButtonClickFeedback : MonoBehaviour
     {
         if (button == null) return;
         if (_punches.TryGetValue(button, out var running) && running != null)
+        {
             StopCoroutine(running);
+            var h = button.GetComponent<ButtonHoverTiltEffect>();
+            if (h != null) h.CaptureRestState();
+            _punches[button] = null;
+        }
         var punch = StartCoroutine(PunchRoutine(button));
         _punches[button] = punch;
         var theme = ResolveTheme(button, contextOverride);
@@ -151,7 +156,7 @@ public class UIButtonClickFeedback : MonoBehaviour
         var rt = button.transform as RectTransform;
         if (rt == null) yield break;
         var hover = button.GetComponent<ButtonHoverTiltEffect>();
-        Vector3 original = rt.localScale;
+        Vector3 baseline = hover != null ? hover.DesignScale : rt.localScale;
         float up = punchHalfDuration;
         float t = 0f;
         while (t < up)
@@ -159,7 +164,7 @@ public class UIButtonClickFeedback : MonoBehaviour
             t += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(t / up);
             float s = Mathf.SmoothStep(1f, punchScale, k);
-            rt.localScale = original * s;
+            rt.localScale = baseline * s;
             yield return null;
         }
         t = 0f;
@@ -168,10 +173,10 @@ public class UIButtonClickFeedback : MonoBehaviour
             t += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(t / up);
             float s = Mathf.SmoothStep(punchScale, 1f, k);
-            rt.localScale = original * s;
+            rt.localScale = baseline * s;
             yield return null;
         }
-        rt.localScale = original;
+        rt.localScale = baseline;
         if (hover != null) hover.CaptureRestState();
         _punches[button] = null;
     }

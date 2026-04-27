@@ -11,22 +11,48 @@ public class ButtonHoverTiltEffect : MonoBehaviour, IPointerEnterHandler, IPoint
     [SerializeField] float smoothSeconds = 0.11f;
 
     RectTransform _rt;
+    Vector3 _designScale;
+    Quaternion _designLocalRot;
     Vector3 _restScale;
     Quaternion _restLocalRot;
     Coroutine _animate;
 
-    void Awake() => CacheRest();
-    void OnEnable() => CacheRest();
+    /// <summary>Scale from the hierarchy at startup — never accumulate hover/punch drift.</summary>
+    public Vector3 DesignScale => _designScale;
 
-    void CacheRest()
+    void Awake()
     {
         _rt = transform as RectTransform;
         if (_rt == null) return;
-        _restScale = _rt.localScale;
-        _restLocalRot = _rt.localRotation;
+        _designScale = _rt.localScale;
+        _designLocalRot = _rt.localRotation;
+        _restScale = _designScale;
+        _restLocalRot = _designLocalRot;
     }
 
-    public void CaptureRestState() => CacheRest();
+    void OnEnable()
+    {
+        if (_rt == null) _rt = transform as RectTransform;
+        if (_rt == null) return;
+        _restScale = _designScale;
+        _restLocalRot = _designLocalRot;
+    }
+
+    public void CaptureRestState()
+    {
+        if (_rt == null) _rt = transform as RectTransform;
+        if (_rt == null) return;
+        if (_animate != null)
+        {
+            StopCoroutine(_animate);
+            _animate = null;
+        }
+
+        _rt.localScale = _designScale;
+        _rt.localRotation = _designLocalRot;
+        _restScale = _designScale;
+        _restLocalRot = _designLocalRot;
+    }
 
     void OnDisable()
     {
@@ -37,8 +63,8 @@ public class ButtonHoverTiltEffect : MonoBehaviour, IPointerEnterHandler, IPoint
         }
         if (_rt != null)
         {
-            _rt.localScale = _restScale;
-            _rt.localRotation = _restLocalRot;
+            _rt.localScale = _designScale;
+            _rt.localRotation = _designLocalRot;
         }
     }
 

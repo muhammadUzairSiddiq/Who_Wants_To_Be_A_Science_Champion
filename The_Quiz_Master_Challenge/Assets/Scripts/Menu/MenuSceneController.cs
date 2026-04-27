@@ -28,6 +28,7 @@ public class MenuSceneController : MonoBehaviour
     [SerializeField] Button teamContinueButton;
     [SerializeField] Button quizBackButton;
     [SerializeField] Button teamBackButton;
+    [SerializeField] Button mainMenuBackButton;
     [SerializeField] Button logoutButton;
 
     [Header("Runtime dialogs (empty = auto-build)")]
@@ -61,6 +62,7 @@ public class MenuSceneController : MonoBehaviour
         if (teamContinueButton != null) teamContinueButton.onClick.RemoveAllListeners();
         if (quizBackButton != null) quizBackButton.onClick.RemoveAllListeners();
         if (teamBackButton != null) teamBackButton.onClick.RemoveAllListeners();
+        if (mainMenuBackButton != null) mainMenuBackButton.onClick.RemoveAllListeners();
         if (logoutButton != null) logoutButton.onClick.RemoveAllListeners();
         if (messageDialogOkButton != null) messageDialogOkButton.onClick.RemoveAllListeners();
     }
@@ -93,6 +95,8 @@ public class MenuSceneController : MonoBehaviour
             teamBackButton = transform.Find("Team Selection/Back Button")?.GetComponent<Button>();
         if (logoutButton == null)
             logoutButton = transform.Find("Main Menu/Top Bar/Logout Button")?.GetComponent<Button>();
+        if (mainMenuBackButton == null)
+            mainMenuBackButton = transform.Find("Main Menu/Back Button")?.GetComponent<Button>();
 
         CollectTeamToggles();
     }
@@ -130,6 +134,14 @@ public class MenuSceneController : MonoBehaviour
             teamBackButton.onClick.AddListener(ShowMainMenu);
         if (logoutButton != null)
             logoutButton.onClick.AddListener(OnLogout);
+        if (mainMenuBackButton != null)
+            mainMenuBackButton.onClick.AddListener(OnMainMenuBackToLogin);
+    }
+
+    void OnMainMenuBackToLogin()
+    {
+        if (string.IsNullOrEmpty(loginSceneName)) return;
+        SceneManager.LoadScene(loginSceneName);
     }
 
     void OnLogout()

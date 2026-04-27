@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 [Serializable]
@@ -233,6 +236,204 @@ public static class QuizContent
         return pick;
     }
 
+    /// <summary>
+    /// Uses teacher-authored questions for the current difficulty tier (by run progress); falls back to built-in pool if none match.
+    /// </summary>
+    public static QuizQuestionData GetRandomForCategoryWithProgress(
+        string quizId,
+        int correctAnswersThisRun,
+        int forcedSlotIndex,
+        QuizQuestionData previous)
+    {
+        var tier = QuizDifficultyProgress.GetTierForCorrectCount(correctAnswersThisRun);
+        var teacherPool = TeacherQuestionStore.BuildFilteredQuizDataPool(quizId, tier);
+        if (teacherPool.Count > 0)
+            return PickRandomAvoiding(teacherPool, forcedSlotIndex, previous);
+
+        return GetRandomForCategoryAvoiding(quizId, forcedSlotIndex, previous);
+    }
+
+    static QuizQuestionData PickRandomAvoiding(List<QuizQuestionData> pool, int forcedSlotIndex, QuizQuestionData previous)
+    {
+        if (pool == null || pool.Count == 0) return FallbackQuestion;
+        if (forcedSlotIndex >= 0 && forcedSlotIndex < pool.Count) return pool[forcedSlotIndex];
+        if (previous == null || pool.Count < 2) return pool[UnityEngine.Random.Range(0, pool.Count)];
+
+        for (var attempt = 0; attempt < 24; attempt++)
+        {
+            var pick = pool[UnityEngine.Random.Range(0, pool.Count)];
+            if (!SameQuestionStem(pick, previous)) return pick;
+        }
+
+        return pool[UnityEngine.Random.Range(0, pool.Count)];
+    }
+
     static bool SameQuestionStem(QuizQuestionData a, QuizQuestionData b) =>
         a != null && b != null && string.Equals(a.Question, b.Question, StringComparison.Ordinal);
+}
+
+/// <summary>
+/// Teacher-authored question (JSON / PlayerPrefs today; same fields for Firebase/Azure later).
+/// </summary>
+[Serializable]
+public class TeacherQuestionRecord
+{
+    public string id;
+    public string question;
+    public string categoryKey;
+    public string categoryLabel;
+    public string difficulty;
+    public string[] options = new string[4];
+    public int correctOptionIndex;
+    public string correctAnswer;
+    public long createdUtcUnix;
+}
+
+[Serializable]
+public class TeacherQuestionListWrapper
+{
+    public int schemaVersion = 1;
+    public TeacherQuestionRecord[] items = new TeacherQuestionRecord[0];
+}
+
+public static class TeacherQuestionStore
+{
+    public const int CurrentSchemaVersion = 1;
+    public const string PlayerPrefsJsonKey = "QuizMaster_TeacherQuestions_Json";
+
+    static TeacherQuestionRecord[] EmptyItems() => new TeacherQuestionRecord[0];
+
+    public static TeacherQuestionListWrapper LoadWrapper()
+    {
+        var json = PlayerPrefs.GetString(PlayerPrefsJsonKey, string.Empty);
+        if (string.IsNullOrWhiteSpace(json))
+            return new TeacherQuestionListWrapper { schemaVersion = CurrentSchemaVersion, items = EmptyItems() };
+
+        try
+        {
+            var w = JsonUtility.FromJson<TeacherQuestionListWrapper>(json);
+            if (w == null || w.items == null)
+                return new TeacherQuestionListWrapper { schemaVersion = CurrentSchemaVersion, items = EmptyItems() };
+            w.schemaVersion = Mathf.Max(1, w.schemaVersion);
+            return w;
+        }
+        catch
+        {
+            return new TeacherQuestionListWrapper { schemaVersion = CurrentSchemaVersion, items = EmptyItems() };
+        }
+    }
+
+    public static void SaveWrapper(TeacherQuestionListWrapper wrapper)
+    {
+        if (wrapper.items == null) wrapper.items = EmptyItems();
+        wrapper.schemaVersion = CurrentSchemaVersion;
+        PlayerPrefs.SetString(PlayerPrefsJsonKey, JsonUtility.ToJson(wrapper));
+        PlayerPrefs.Save();
+    }
+
+    public static IReadOnlyList<TeacherQuestionRecord> GetAllRecords()
+    {
+        var w = LoadWrapper().items;
+        return w ?? EmptyItems();
+    }
+
+    public static void AppendQuestion(TeacherQuestionRecord record)
+    {
+        var w = LoadWrapper();
+        var list = new List<TeacherQuestionRecord>(w.items ?? EmptyItems());
+        list.Add(record);
+        w.items = list.ToArray();
+        SaveWrapper(w);
+    }
+
+    public static string AllocateNextQuestionId()
+    {
+        var w = LoadWrapper();
+        var max = 0;
+        var rx = new Regex(@"^Q(\d+)$", RegexOptions.CultureInvariant);
+        foreach (var q in w.items ?? EmptyItems())
+        {
+            if (string.IsNullOrEmpty(q?.id)) continue;
+            var m = rx.Match(q.id.Trim());
+            if (m.Success && int.TryParse(m.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+                max = Mathf.Max(max, n);
+        }
+
+        return "Q" + (max + 1).ToString("D3", CultureInfo.InvariantCulture);
+    }
+
+    public static string CanonicalCategoryFromDropdown(string dropdownText)
+    {
+        var t = dropdownText?.Trim() ?? string.Empty;
+        if (string.Equals(t, "Maths", StringComparison.OrdinalIgnoreCase)) return "Math";
+        return t;
+    }
+
+    public static bool RecordMatchesStudentQuiz(TeacherQuestionRecord q, string studentQuizId)
+    {
+        if (q == null || string.IsNullOrWhiteSpace(studentQuizId)) return false;
+        var sid = studentQuizId.Trim();
+        var key = q.categoryKey?.Trim() ?? string.Empty;
+
+        if (string.Equals(sid, "Mixed", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (string.Equals(key, sid, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (string.Equals(key, "Science", StringComparison.OrdinalIgnoreCase))
+        {
+            return sid.Equals("Physics", StringComparison.OrdinalIgnoreCase)
+                   || sid.Equals("Chemistry", StringComparison.OrdinalIgnoreCase)
+                   || sid.Equals("Biology", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
+
+    public static bool DifficultyMatches(string recordDifficulty, string tierEasyMediumHard)
+    {
+        var a = recordDifficulty?.Trim() ?? string.Empty;
+        var b = tierEasyMediumHard?.Trim() ?? string.Empty;
+        return string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static List<QuizQuestionData> BuildFilteredQuizDataPool(string studentQuizId, string difficultyTier)
+    {
+        var result = new List<QuizQuestionData>();
+        foreach (var r in GetAllRecords())
+        {
+            if (r == null || string.IsNullOrWhiteSpace(r.question)) continue;
+            if (!RecordMatchesStudentQuiz(r, studentQuizId)) continue;
+            if (!DifficultyMatches(r.difficulty, difficultyTier)) continue;
+            result.Add(ToQuizQuestionData(r));
+        }
+
+        return result;
+    }
+
+    public static QuizQuestionData ToQuizQuestionData(TeacherQuestionRecord r)
+    {
+        return new QuizQuestionData
+        {
+            Question = r.question ?? string.Empty,
+            Options = r.options != null && r.options.Length == 4
+                ? (string[])r.options.Clone()
+                : new[] { "", "", "", "" },
+            CorrectOptionIndex = Mathf.Clamp(r.correctOptionIndex, 0, 3)
+        };
+    }
+}
+
+public static class QuizDifficultyProgress
+{
+    public const int EasyCapExclusive = 5;
+    public const int MediumCapExclusive = 10;
+
+    public static string GetTierForCorrectCount(int correctAnswersSoFar)
+    {
+        if (correctAnswersSoFar < EasyCapExclusive) return "Easy";
+        if (correctAnswersSoFar < MediumCapExclusive) return "Medium";
+        return "Hard";
+    }
 }
