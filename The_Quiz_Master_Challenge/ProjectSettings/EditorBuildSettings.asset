@@ -14,5 +14,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Gameplay.unity
     guid: be2f10cc2dcb4364b9e43ac230dcc76c
+  - enabled: 1
+    path: Assets/Scenes/TeachersLogin.unity
+    guid: bae2146346ffc6942aad07e0f0f60667
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
