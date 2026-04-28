@@ -75,7 +75,11 @@ public class DashboardSceneController : MonoBehaviour
         }
 
         if (listPanelBackButton == null && listQuestionsPanel != null)
+        {
             listPanelBackButton = listQuestionsPanel.transform.Find("Back Button")?.GetComponent<Button>();
+            if (listPanelBackButton == null)
+                listPanelBackButton = listQuestionsPanel.transform.Find("Add New Question Panel/Back Button")?.GetComponent<Button>();
+        }
 
         if (listQuestionsPanel != null)
         {

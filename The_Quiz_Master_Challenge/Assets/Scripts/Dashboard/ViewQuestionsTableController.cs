@@ -27,6 +27,7 @@ public class ViewQuestionsTableController : MonoBehaviour
 
     [Header("Root References (optional - auto-resolve if empty)")]
     [SerializeField] RectTransform tableHost;
+    [SerializeField] ScrollRect scrollRect;
     [SerializeField] TMP_InputField searchInput;
     [SerializeField] TMP_Dropdown categoryFilterDropdown;
 
@@ -81,6 +82,7 @@ public class ViewQuestionsTableController : MonoBehaviour
 
     VerticalLayoutGroup tableLayout;
     RectTransform contentRoot;
+    RectTransform viewportRoot;
     readonly List<GameObject> runtimeRows = new();
     readonly List<TeacherQuestionRecord> filteredRecords = new();
     bool wired;
@@ -122,6 +124,10 @@ public class ViewQuestionsTableController : MonoBehaviour
         BuildFilteredRecords();
         for (var i = 0; i < filteredRecords.Count; i++)
             BuildRow(filteredRecords[i], i);
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+        if (scrollRect != null)
+            scrollRect.verticalNormalizedPosition = 1f;
     }
 
     void ResolveReferences()
@@ -147,6 +153,16 @@ public class ViewQuestionsTableController : MonoBehaviour
             categoryFilterDropdown = transform.Find("Category Dropdown")?.GetComponent<TMP_Dropdown>()
                                    ?? transform.Find("Category Filter")?.GetComponent<TMP_Dropdown>();
         }
+
+        if (scrollRect == null)
+        {
+            scrollRect = GetComponentInChildren<ScrollRect>(true);
+            if (scrollRect == null)
+            {
+                var t = transform.Find("Scroll View");
+                if (t != null) scrollRect = t.GetComponent<ScrollRect>();
+            }
+        }
     }
 
     void EnsureTableRoot()
@@ -154,32 +170,91 @@ public class ViewQuestionsTableController : MonoBehaviour
         if (tableHost == null) tableHost = transform as RectTransform;
         if (tableHost == null) return;
 
-        var existing = tableHost.Find("RuntimeTableContent") as RectTransform;
-        if (existing != null)
+        if (scrollRect != null && scrollRect.content != null)
         {
-            contentRoot = existing;
-            tableLayout = contentRoot.GetComponent<VerticalLayoutGroup>();
+            contentRoot = scrollRect.content;
+            viewportRoot = scrollRect.viewport;
+            ConfigureContentLayout(contentRoot);
             return;
         }
 
-        var go = new GameObject("RuntimeTableContent", typeof(RectTransform), typeof(VerticalLayoutGroup));
-        contentRoot = go.GetComponent<RectTransform>();
-        contentRoot.SetParent(tableHost, false);
-        contentRoot.anchorMin = new Vector2(0f, 0f);
-        contentRoot.anchorMax = new Vector2(1f, 1f);
-        contentRoot.offsetMin = Vector2.zero;
-        contentRoot.offsetMax = Vector2.zero;
+        var existing = tableHost.Find("RuntimeScrollView/Viewport/RuntimeTableContent") as RectTransform;
+        if (existing == null)
+            existing = tableHost.Find("RuntimeTableContent") as RectTransform;
+        if (existing != null)
+        {
+            contentRoot = existing;
+            viewportRoot = contentRoot.parent as RectTransform;
+            scrollRect = contentRoot.GetComponentInParent<ScrollRect>();
+            ConfigureContentLayout(contentRoot);
+            return;
+        }
 
-        tableLayout = go.GetComponent<VerticalLayoutGroup>();
+        CreateRuntimeScrollView();
+    }
+
+    void CreateRuntimeScrollView()
+    {
+        var scrollGo = new GameObject("RuntimeScrollView", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+        var scrollRt = scrollGo.GetComponent<RectTransform>();
+        scrollRt.SetParent(tableHost, false);
+        scrollRt.anchorMin = new Vector2(0f, 0f);
+        scrollRt.anchorMax = new Vector2(1f, 1f);
+        scrollRt.offsetMin = Vector2.zero;
+        scrollRt.offsetMax = Vector2.zero;
+
+        var scrollImage = scrollGo.GetComponent<Image>();
+        scrollImage.color = new Color(1f, 1f, 1f, 0.02f);
+
+        var viewportGo = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        viewportRoot = viewportGo.GetComponent<RectTransform>();
+        viewportRoot.SetParent(scrollRt, false);
+        viewportRoot.anchorMin = new Vector2(0f, 0f);
+        viewportRoot.anchorMax = new Vector2(1f, 1f);
+        viewportRoot.offsetMin = Vector2.zero;
+        viewportRoot.offsetMax = Vector2.zero;
+
+        var viewportImage = viewportGo.GetComponent<Image>();
+        viewportImage.color = new Color(1f, 1f, 1f, 0.02f);
+        viewportGo.GetComponent<Mask>().showMaskGraphic = false;
+
+        var contentGo = new GameObject("RuntimeTableContent", typeof(RectTransform));
+        contentRoot = contentGo.GetComponent<RectTransform>();
+        contentRoot.SetParent(viewportRoot, false);
+        contentRoot.anchorMin = new Vector2(0f, 1f);
+        contentRoot.anchorMax = new Vector2(1f, 1f);
+        contentRoot.pivot = new Vector2(0.5f, 1f);
+        contentRoot.anchoredPosition = Vector2.zero;
+        contentRoot.sizeDelta = new Vector2(0f, 0f);
+
+        scrollRect = scrollGo.GetComponent<ScrollRect>();
+        scrollRect.viewport = viewportRoot;
+        scrollRect.content = contentRoot;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.scrollSensitivity = 35f;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        scrollRect.verticalNormalizedPosition = 1f;
+
+        ConfigureContentLayout(contentRoot);
+    }
+
+    void ConfigureContentLayout(RectTransform content)
+    {
+        if (content == null) return;
+
+        tableLayout = content.GetComponent<VerticalLayoutGroup>();
+        if (tableLayout == null) tableLayout = content.gameObject.AddComponent<VerticalLayoutGroup>();
         tableLayout.childAlignment = TextAnchor.UpperCenter;
         tableLayout.childControlHeight = false;
         tableLayout.childControlWidth = true;
         tableLayout.childForceExpandHeight = false;
         tableLayout.childForceExpandWidth = true;
         tableLayout.spacing = rowSpacing;
-        tableLayout.padding = new RectOffset(8, 8, 8, 8);
+        tableLayout.padding = new RectOffset(0, 0, 0, 0);
 
-        var fit = go.AddComponent<ContentSizeFitter>();
+        var fit = content.GetComponent<ContentSizeFitter>();
+        if (fit == null) fit = content.gameObject.AddComponent<ContentSizeFitter>();
         fit.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
         fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
     }
