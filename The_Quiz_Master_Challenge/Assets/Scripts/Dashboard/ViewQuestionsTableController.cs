@@ -44,16 +44,18 @@ public class ViewQuestionsTableController : MonoBehaviour
     [SerializeField] Color rowBackgroundColor = new(0.10f, 0.06f, 0.25f, 0.90f);
     [SerializeField] float rowHeight = 72f;
     [SerializeField] float rowSpacing = 8f;
-    [SerializeField] float columnSpacing = 18f;
+    [SerializeField] float columnSpacing = 90f;
+    [SerializeField] float headerColumnSpacing = 50f;
     [SerializeField] ColumnWidths columnWidths = new()
     {
-        id = 130f,
-        question = 640f,
-        category = 200f,
-        difficulty = 180f,
-        correctAnswer = 250f,
-        action = 230f
+        id = 80f,
+        question = 360f,
+        category = 150f,
+        difficulty = 150f,
+        correctAnswer = 130f,
+        action = 170f
     };
+    [SerializeField] bool useAutoProportionalColumns = true;
 
     [Header("Badge Sprites (Optional)")]
     [SerializeField] Sprite categoryBadgeSprite;
@@ -191,7 +193,7 @@ public class ViewQuestionsTableController : MonoBehaviour
         header.transform.SetAsFirstSibling();
 
         AddTextCell(header.transform, HeaderTitles[0], widths.id, true, TextAlignmentOptions.Center);
-        AddTextCell(header.transform, HeaderTitles[1], widths.question, true, TextAlignmentOptions.Left);
+        AddTextCell(header.transform, HeaderTitles[1], widths.question, true, TextAlignmentOptions.Center);
         AddTextCell(header.transform, HeaderTitles[2], widths.category, true, TextAlignmentOptions.Center);
         AddTextCell(header.transform, HeaderTitles[3], widths.difficulty, true, TextAlignmentOptions.Center);
         AddTextCell(header.transform, HeaderTitles[4], widths.correctAnswer, true, TextAlignmentOptions.Center);
@@ -275,7 +277,7 @@ public class ViewQuestionsTableController : MonoBehaviour
         runtimeRows.Add(row);
 
         AddTextCell(row.transform, q.id ?? "-", widths.id, false, TextAlignmentOptions.Center);
-        AddTextCell(row.transform, q.question ?? string.Empty, widths.question, false, TextAlignmentOptions.Left);
+        AddTextCell(row.transform, q.question ?? string.Empty, widths.question, false, TextAlignmentOptions.Center);
         AddBadgeCell(row.transform, q.categoryLabel ?? q.categoryKey ?? "-", widths.category, GetCategorySprite(q));
         AddBadgeCell(row.transform, q.difficulty ?? "-", widths.difficulty, GetDifficultySprite(q.difficulty));
         AddTextCell(row.transform, q.correctAnswer ?? "-", widths.correctAnswer, false, TextAlignmentOptions.Center);
@@ -305,8 +307,8 @@ public class ViewQuestionsTableController : MonoBehaviour
         layout.childControlWidth = false;
         layout.childForceExpandHeight = true;
         layout.childForceExpandWidth = false;
-        layout.spacing = columnSpacing;
-        layout.padding = new RectOffset(14, 14, 8, 8);
+        layout.spacing = isHeader ? headerColumnSpacing : columnSpacing;
+        layout.padding = new RectOffset(0, 0, 0, 0);
         layout.childAlignment = TextAnchor.MiddleLeft;
 
         var le = row.GetComponent<LayoutElement>();
@@ -362,7 +364,7 @@ public class ViewQuestionsTableController : MonoBehaviour
         badgeRt.anchorMin = new Vector2(0.5f, 0.5f);
         badgeRt.anchorMax = new Vector2(0.5f, 0.5f);
         badgeRt.pivot = new Vector2(0.5f, 0.5f);
-        badgeRt.sizeDelta = new Vector2(Mathf.Min(width - 16f, 200f), rowHeight - 24f);
+        badgeRt.sizeDelta = new Vector2(Mathf.Min(width * 0.56f, 96f), rowHeight - 34f);
         badgeRt.anchoredPosition = Vector2.zero;
 
         var img = badge.GetComponent<Image>();
@@ -429,7 +431,7 @@ public class ViewQuestionsTableController : MonoBehaviour
         le.flexibleWidth = 0f;
 
         var h = holder.GetComponent<HorizontalLayoutGroup>();
-        h.spacing = 8f;
+        h.spacing = 14f;
         h.padding = new RectOffset(0, 0, 0, 0);
         h.childAlignment = TextAnchor.MiddleCenter;
         h.childControlHeight = false;
@@ -473,11 +475,11 @@ public class ViewQuestionsTableController : MonoBehaviour
         go.transform.SetParent(parent, false);
 
         var rt = go.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(56f, 44f);
+        rt.sizeDelta = new Vector2(44f, 36f);
 
         var le = go.GetComponent<LayoutElement>();
-        le.preferredWidth = 56f;
-        le.preferredHeight = 44f;
+        le.preferredWidth = 44f;
+        le.preferredHeight = 36f;
 
         var img = go.GetComponent<Image>();
         img.sprite = sprite;
@@ -520,11 +522,22 @@ public class ViewQuestionsTableController : MonoBehaviour
         var resolved = columnWidths;
         if (tableHost == null) return resolved;
 
-        var totalDesired = columnWidths.id + columnWidths.question + columnWidths.category
-                           + columnWidths.difficulty + columnWidths.correctAnswer + columnWidths.action;
-        totalDesired += columnSpacing * 5f;
-
         var available = Mathf.Max(300f, tableHost.rect.width - 36f);
+        if (useAutoProportionalColumns)
+        {
+            var usable = Mathf.Max(240f, available - (columnSpacing * 5f));
+            resolved.id = usable * 0.07f;
+            resolved.question = usable * 0.26f;
+            resolved.category = usable * 0.16f;
+            resolved.difficulty = usable * 0.16f;
+            resolved.correctAnswer = usable * 0.11f;
+            resolved.action = usable * 0.16f;
+            return resolved;
+        }
+
+        var totalDesired = columnWidths.id + columnWidths.question + columnWidths.category
+                           + columnWidths.difficulty + columnWidths.correctAnswer + columnWidths.action
+                           + (columnSpacing * 5f);
         if (totalDesired <= available) return resolved;
 
         var scale = available / totalDesired;
