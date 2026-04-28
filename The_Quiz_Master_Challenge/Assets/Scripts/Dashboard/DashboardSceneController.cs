@@ -19,6 +19,7 @@ public class DashboardSceneController : MonoBehaviour
     [SerializeField] Button mainMenuBackButton;
     [SerializeField] Button addPanelBackButton;
     [SerializeField] Button listPanelBackButton;
+    ViewQuestionsTableController viewQuestionsTableController;
 
     void Awake()
     {
@@ -52,7 +53,8 @@ public class DashboardSceneController : MonoBehaviour
 
         if (listQuestionsPanel == null)
         {
-            var t = transform.Find("List of Questions Panel");
+            var t = transform.Find("List of Questions Panel")
+                    ?? transform.Find("View Question Panel");
             if (t != null) listQuestionsPanel = t.gameObject;
         }
 
@@ -74,6 +76,18 @@ public class DashboardSceneController : MonoBehaviour
 
         if (listPanelBackButton == null && listQuestionsPanel != null)
             listPanelBackButton = listQuestionsPanel.transform.Find("Back Button")?.GetComponent<Button>();
+
+        if (listQuestionsPanel != null)
+        {
+            if (viewQuestionsTableController == null)
+                viewQuestionsTableController = listQuestionsPanel.GetComponentInChildren<ViewQuestionsTableController>(true);
+
+            if (viewQuestionsTableController == null)
+            {
+                viewQuestionsTableController = listQuestionsPanel.AddComponent<ViewQuestionsTableController>();
+                Debug.Log("Dashboard: auto-added ViewQuestionsTableController to View/List Questions Panel.");
+            }
+        }
     }
 
     void WireButtons()
@@ -102,6 +116,7 @@ public class DashboardSceneController : MonoBehaviour
         if (mainMenuDashboardPanel != null) mainMenuDashboardPanel.SetActive(false);
         if (addQuestionPanel != null) addQuestionPanel.SetActive(false);
         if (listQuestionsPanel != null) listQuestionsPanel.SetActive(true);
+        if (viewQuestionsTableController != null) viewQuestionsTableController.RefreshTable();
     }
 
     void ShowMainDashboard()

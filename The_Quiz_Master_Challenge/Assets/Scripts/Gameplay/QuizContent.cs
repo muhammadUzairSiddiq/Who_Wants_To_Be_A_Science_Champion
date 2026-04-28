@@ -336,6 +336,20 @@ public static class TeacherQuestionStore
         SaveWrapper(w);
     }
 
+    public static bool RemoveQuestionById(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return false;
+
+        var w = LoadWrapper();
+        var list = new List<TeacherQuestionRecord>(w.items ?? EmptyItems());
+        var removed = list.RemoveAll(q => string.Equals(q?.id, id.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (removed <= 0) return false;
+
+        w.items = list.ToArray();
+        SaveWrapper(w);
+        return true;
+    }
+
     public static string AllocateNextQuestionId()
     {
         var w = LoadWrapper();
