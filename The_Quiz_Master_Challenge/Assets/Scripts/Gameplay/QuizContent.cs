@@ -237,35 +237,25 @@ public static class QuizContent
     }
 
     /// <summary>
-    /// Uses teacher-authored questions for the current difficulty tier (by run progress); falls back to built-in pool if none match.
+    /// Teacher questions for the selected student quiz are played in id order (Q001, Q002, …), one per round.
+    /// After the authored list is exhausted, falls back to the built-in pool (random, avoiding immediate repeat).
     /// </summary>
-    public static QuizQuestionData GetRandomForCategoryWithProgress(
+    public static QuizQuestionData GetSequentialForCategoryWithProgress(
         string quizId,
-        int correctAnswersThisRun,
+        int teacherSequentialIndex,
         int forcedSlotIndex,
         QuizQuestionData previous)
     {
-        var tier = QuizDifficultyProgress.GetTierForCorrectCount(correctAnswersThisRun);
-        var teacherPool = TeacherQuestionStore.BuildFilteredQuizDataPool(quizId, tier);
+        var teacherPool = TeacherQuestionStore.BuildOrderedQuizDataPoolForStudentQuiz(quizId);
         if (teacherPool.Count > 0)
-            return PickRandomAvoiding(teacherPool, forcedSlotIndex, previous);
-
-        return GetRandomForCategoryAvoiding(quizId, forcedSlotIndex, previous);
-    }
-
-    static QuizQuestionData PickRandomAvoiding(List<QuizQuestionData> pool, int forcedSlotIndex, QuizQuestionData previous)
-    {
-        if (pool == null || pool.Count == 0) return FallbackQuestion;
-        if (forcedSlotIndex >= 0 && forcedSlotIndex < pool.Count) return pool[forcedSlotIndex];
-        if (previous == null || pool.Count < 2) return pool[UnityEngine.Random.Range(0, pool.Count)];
-
-        for (var attempt = 0; attempt < 24; attempt++)
         {
-            var pick = pool[UnityEngine.Random.Range(0, pool.Count)];
-            if (!SameQuestionStem(pick, previous)) return pick;
+            if (forcedSlotIndex >= 0 && forcedSlotIndex < teacherPool.Count)
+                return teacherPool[forcedSlotIndex];
+            if (teacherSequentialIndex >= 0 && teacherSequentialIndex < teacherPool.Count)
+                return teacherPool[teacherSequentialIndex];
         }
 
-        return pool[UnityEngine.Random.Range(0, pool.Count)];
+        return GetRandomForCategoryAvoiding(quizId, forcedSlotIndex, previous);
     }
 
     static bool SameQuestionStem(QuizQuestionData a, QuizQuestionData b) =>
@@ -350,16 +340,50 @@ public static class TeacherQuestionStore
     {
         var w = LoadWrapper();
         var max = 0;
-        var rx = new Regex(@"^Q(\d+)$", RegexOptions.CultureInvariant);
         foreach (var q in w.items ?? EmptyItems())
         {
-            if (string.IsNullOrEmpty(q?.id)) continue;
-            var m = rx.Match(q.id.Trim());
-            if (m.Success && int.TryParse(m.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
-                max = Mathf.Max(max, n);
+            var n = ParseQuestionIdOrdinal(q?.id);
+            if (n != int.MaxValue) max = Mathf.Max(max, n);
         }
 
         return "Q" + (max + 1).ToString("D3", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Parses Q001-style ids for ordering; unknown ids sort last.</summary>
+    public static int ParseQuestionIdOrdinal(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return int.MaxValue;
+        var m = Regex.Match(id.Trim(), @"^Q(\d+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (m.Success && int.TryParse(m.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+            return n;
+        return int.MaxValue;
+    }
+
+    /// <summary>All teacher questions matching the student quiz category, sorted by Q### id (then id string).</summary>
+    public static List<QuizQuestionData> BuildOrderedQuizDataPoolForStudentQuiz(string studentQuizId)
+    {
+        var records = new List<TeacherQuestionRecord>();
+        foreach (var r in GetAllRecords())
+        {
+            if (r == null || string.IsNullOrWhiteSpace(r.question)) continue;
+            if (!RecordMatchesStudentQuiz(r, studentQuizId)) continue;
+            records.Add(r);
+        }
+
+        records.Sort(CompareRecordsByQuestionId);
+
+        var result = new List<QuizQuestionData>(records.Count);
+        foreach (var r in records)
+            result.Add(ToQuizQuestionData(r));
+        return result;
+    }
+
+    static int CompareRecordsByQuestionId(TeacherQuestionRecord a, TeacherQuestionRecord b)
+    {
+        var na = ParseQuestionIdOrdinal(a?.id);
+        var nb = ParseQuestionIdOrdinal(b?.id);
+        if (na != nb) return na.CompareTo(nb);
+        return string.Compare(a?.id, b?.id, StringComparison.OrdinalIgnoreCase);
     }
 
     public static string CanonicalCategoryFromDropdown(string dropdownText)
