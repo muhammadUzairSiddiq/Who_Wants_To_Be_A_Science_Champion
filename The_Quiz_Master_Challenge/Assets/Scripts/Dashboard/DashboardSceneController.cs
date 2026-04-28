@@ -108,14 +108,14 @@ public class DashboardSceneController : MonoBehaviour
             listPanelBackButton.onClick.AddListener(ShowMainDashboard);
     }
 
-    void ShowAddQuestionPanel()
+    public void ShowAddQuestionPanel()
     {
         if (mainMenuDashboardPanel != null) mainMenuDashboardPanel.SetActive(false);
         if (listQuestionsPanel != null) listQuestionsPanel.SetActive(false);
         if (addQuestionPanel != null) addQuestionPanel.SetActive(true);
     }
 
-    void ShowListQuestionsPanel()
+    public void ShowListQuestionsPanel()
     {
         if (mainMenuDashboardPanel != null) mainMenuDashboardPanel.SetActive(false);
         if (addQuestionPanel != null) addQuestionPanel.SetActive(false);
@@ -123,7 +123,7 @@ public class DashboardSceneController : MonoBehaviour
         if (viewQuestionsTableController != null) viewQuestionsTableController.RefreshTable();
     }
 
-    void ShowMainDashboard()
+    public void ShowMainDashboard()
     {
         if (addQuestionPanel != null) addQuestionPanel.SetActive(false);
         if (listQuestionsPanel != null) listQuestionsPanel.SetActive(false);

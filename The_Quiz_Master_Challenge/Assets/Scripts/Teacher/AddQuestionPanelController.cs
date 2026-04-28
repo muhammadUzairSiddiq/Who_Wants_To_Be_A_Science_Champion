@@ -14,6 +14,7 @@ public class AddQuestionPanelController : MonoBehaviour
     [SerializeField] Toggle[] correctToggles = new Toggle[4];
     [SerializeField] Button clearButton;
     [SerializeField] Button saveButton;
+    string editingQuestionId;
 
     void Awake()
     {
@@ -112,6 +113,7 @@ public class AddQuestionPanelController : MonoBehaviour
 
     public void ClearForm()
     {
+        editingQuestionId = null;
         if (questionInput != null) questionInput.text = string.Empty;
         if (categoryDropdown != null) categoryDropdown.value = 0;
         if (difficultyDropdown != null) difficultyDropdown.value = 0;
@@ -180,7 +182,9 @@ public class AddQuestionPanelController : MonoBehaviour
 
         var record = new TeacherQuestionRecord
         {
-            id = TeacherQuestionStore.AllocateNextQuestionId(),
+            id = string.IsNullOrWhiteSpace(editingQuestionId)
+                ? TeacherQuestionStore.AllocateNextQuestionId()
+                : editingQuestionId,
             question = qText,
             categoryKey = TeacherQuestionStore.CanonicalCategoryFromDropdown(catLabel),
             categoryLabel = catLabel.Trim(),
@@ -188,11 +192,80 @@ public class AddQuestionPanelController : MonoBehaviour
             options = options,
             correctOptionIndex = correctIndex,
             correctAnswer = options[correctIndex],
-            createdUtcUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+            createdUtcUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            isHidden = false
         };
 
-        TeacherQuestionStore.AppendQuestion(record);
-        Debug.Log($"Teacher question saved: {record.id} ({record.categoryKey} / {record.difficulty})");
+        if (string.IsNullOrWhiteSpace(editingQuestionId))
+        {
+            TeacherQuestionStore.AppendQuestion(record);
+            Debug.Log($"Teacher question saved: {record.id} ({record.categoryKey} / {record.difficulty})");
+        }
+        else
+        {
+            var prior = TeacherQuestionStore.GetQuestionById(editingQuestionId);
+            if (prior != null)
+            {
+                record.createdUtcUnix = prior.createdUtcUnix;
+                record.isHidden = prior.isHidden;
+            }
+
+            if (!TeacherQuestionStore.UpdateQuestionById(editingQuestionId, record))
+            {
+                Debug.LogWarning($"AddQuestion: update failed for id {editingQuestionId}.");
+                return;
+            }
+
+            Debug.Log($"Teacher question updated: {record.id} ({record.categoryKey} / {record.difficulty})");
+        }
+
         ClearForm();
+    }
+
+    public bool BeginEditById(string questionId)
+    {
+        if (string.IsNullOrWhiteSpace(questionId)) return false;
+        var record = TeacherQuestionStore.GetQuestionById(questionId);
+        if (record == null) return false;
+        return BeginEdit(record);
+    }
+
+    public bool BeginEdit(TeacherQuestionRecord record)
+    {
+        if (record == null) return false;
+
+        editingQuestionId = record.id;
+        if (questionInput != null) questionInput.text = record.question ?? string.Empty;
+
+        SetDropdownByText(categoryDropdown, record.categoryLabel, record.categoryKey);
+        SetDropdownByText(difficultyDropdown, record.difficulty, record.difficulty);
+
+        for (var i = 0; i < 4; i++)
+        {
+            var value = record.options != null && i < record.options.Length ? record.options[i] : string.Empty;
+            if (optionInputs[i] != null) optionInputs[i].text = value ?? string.Empty;
+            if (correctToggles[i] != null)
+                correctToggles[i].SetIsOnWithoutNotify(i == Mathf.Clamp(record.correctOptionIndex, 0, 3));
+        }
+
+        return true;
+    }
+
+    static void SetDropdownByText(TMP_Dropdown dropdown, string preferred, string fallback)
+    {
+        if (dropdown == null || dropdown.options.Count == 0) return;
+        var p = preferred?.Trim() ?? string.Empty;
+        var f = fallback?.Trim() ?? string.Empty;
+
+        for (var i = 0; i < dropdown.options.Count; i++)
+        {
+            var text = dropdown.options[i].text?.Trim() ?? string.Empty;
+            if (string.Equals(text, p, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(text, f, StringComparison.OrdinalIgnoreCase))
+            {
+                dropdown.value = i;
+                return;
+            }
+        }
     }
 }

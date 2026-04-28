@@ -77,12 +77,16 @@ public class ViewQuestionsTableController : MonoBehaviour
 
     [Header("Action Events")]
     [SerializeField] StringEvent onEditClicked = new();
-    [SerializeField] StringEvent onViewClicked = new();
+    [SerializeField] StringEvent onHideClicked = new();
     [SerializeField] StringEvent onDeleteClicked = new();
 
     VerticalLayoutGroup tableLayout;
     RectTransform contentRoot;
     RectTransform viewportRoot;
+    DashboardSceneController dashboardSceneController;
+    AddQuestionPanelController addQuestionPanelController;
+    GameObject deleteConfirmOverlay;
+    Action pendingDeleteAction;
     readonly List<GameObject> runtimeRows = new();
     readonly List<TeacherQuestionRecord> filteredRecords = new();
     bool wired;
@@ -98,6 +102,7 @@ public class ViewQuestionsTableController : MonoBehaviour
         AutoResolveSpritesFromTeacherViewQuestionFolder();
 #endif
         ResolveReferences();
+        ResolveSceneControllers();
         EnsureTableRoot();
         BuildHeader();
         WireInputs();
@@ -163,6 +168,14 @@ public class ViewQuestionsTableController : MonoBehaviour
                 if (t != null) scrollRect = t.GetComponent<ScrollRect>();
             }
         }
+    }
+
+    void ResolveSceneControllers()
+    {
+        if (dashboardSceneController == null)
+            dashboardSceneController = FindFirstObjectByType<DashboardSceneController>(FindObjectsInactive.Include);
+        if (addQuestionPanelController == null)
+            addQuestionPanelController = FindFirstObjectByType<AddQuestionPanelController>(FindObjectsInactive.Include);
     }
 
     void EnsureTableRoot()
@@ -350,6 +363,7 @@ public class ViewQuestionsTableController : MonoBehaviour
         var widths = GetResolvedColumnWidths();
         var row = CreateRowContainer($"Row_{rowIndex + 1:D3}", false);
         runtimeRows.Add(row);
+        SetRowHiddenVisual(row, q != null && q.isHidden);
 
         AddTextCell(row.transform, q.id ?? "-", widths.id, false, TextAlignmentOptions.Center);
         AddTextCell(row.transform, q.question ?? string.Empty, widths.question, false, TextAlignmentOptions.Center);
@@ -357,6 +371,16 @@ public class ViewQuestionsTableController : MonoBehaviour
         AddBadgeCell(row.transform, q.difficulty ?? "-", widths.difficulty, GetDifficultySprite(q.difficulty));
         AddTextCell(row.transform, q.correctAnswer ?? "-", widths.correctAnswer, false, TextAlignmentOptions.Center);
         AddActionCell(row.transform, q, widths.action);
+    }
+
+    void SetRowHiddenVisual(GameObject row, bool isHidden)
+    {
+        if (row == null) return;
+        var img = row.GetComponent<Image>();
+        if (img == null) return;
+        img.color = isHidden
+            ? new Color(rowBackgroundColor.r, rowBackgroundColor.g, rowBackgroundColor.b, 0.28f)
+            : rowBackgroundColor;
     }
 
     GameObject CreateRowContainer(string rowName, bool isHeader)
@@ -517,26 +541,52 @@ public class ViewQuestionsTableController : MonoBehaviour
         AddActionButton(holder.transform, "Edit", editButtonSprite, () =>
         {
             onEditClicked?.Invoke(q.id);
-            Debug.Log($"Edit clicked: {q.id}");
+            HandleEdit(q);
         });
 
-        AddActionButton(holder.transform, "View", viewButtonSprite, () =>
+        AddActionButton(holder.transform, "Hide", viewButtonSprite, () =>
         {
-            onViewClicked?.Invoke(q.id);
-            Debug.Log($"View clicked: {q.id}");
+            HandleHide(q);
         });
 
         AddActionButton(holder.transform, "Delete", deleteButtonSprite, () =>
         {
-            if (!TeacherQuestionStore.RemoveQuestionById(q.id))
+            ShowDeleteConfirm(() =>
             {
-                Debug.LogWarning($"Delete failed: {q.id}");
-                return;
-            }
+                if (!TeacherQuestionStore.RemoveQuestionById(q.id))
+                {
+                    Debug.LogWarning($"Delete failed: {q.id}");
+                    return;
+                }
 
-            onDeleteClicked?.Invoke(q.id);
-            RefreshTable();
+                onDeleteClicked?.Invoke(q.id);
+                RefreshTable();
+            });
         });
+    }
+
+    void HandleEdit(TeacherQuestionRecord q)
+    {
+        if (q == null || string.IsNullOrWhiteSpace(q.id)) return;
+        ResolveSceneControllers();
+        if (dashboardSceneController != null)
+            dashboardSceneController.ShowAddQuestionPanel();
+        if (addQuestionPanelController != null)
+            addQuestionPanelController.BeginEditById(q.id);
+    }
+
+    void HandleHide(TeacherQuestionRecord q)
+    {
+        if (q == null || string.IsNullOrWhiteSpace(q.id)) return;
+        var targetHidden = !q.isHidden;
+        if (!TeacherQuestionStore.SetHiddenById(q.id, targetHidden))
+        {
+            Debug.LogWarning($"Hide failed: {q.id}");
+            return;
+        }
+
+        onHideClicked?.Invoke(q.id);
+        RefreshTable();
     }
 
     void AddActionButton(Transform parent, string fallbackLabel, Sprite sprite, UnityAction onClick)
@@ -590,6 +640,152 @@ public class ViewQuestionsTableController : MonoBehaviour
                 Destroy(runtimeRows[i]);
         }
         runtimeRows.Clear();
+    }
+
+    void ShowDeleteConfirm(Action onYes)
+    {
+        pendingDeleteAction = onYes;
+        EnsureDeleteConfirmUI();
+        if (deleteConfirmOverlay != null)
+            deleteConfirmOverlay.SetActive(true);
+    }
+
+    void EnsureDeleteConfirmUI()
+    {
+        if (deleteConfirmOverlay != null) return;
+
+        var root = tableHost != null ? tableHost : transform as RectTransform;
+        if (root == null) return;
+
+        var overlay = new GameObject("DeleteConfirmOverlay", typeof(RectTransform), typeof(Image));
+        deleteConfirmOverlay = overlay;
+        var overlayRt = overlay.GetComponent<RectTransform>();
+        overlayRt.SetParent(root, false);
+        overlayRt.anchorMin = Vector2.zero;
+        overlayRt.anchorMax = Vector2.one;
+        overlayRt.offsetMin = Vector2.zero;
+        overlayRt.offsetMax = Vector2.zero;
+        overlay.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.58f);
+
+        var blocker = overlay.AddComponent<Button>();
+        blocker.onClick.AddListener(HideDeleteConfirm);
+
+        var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(Outline));
+        var panelRt = panel.GetComponent<RectTransform>();
+        panelRt.SetParent(overlayRt, false);
+        panelRt.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRt.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRt.pivot = new Vector2(0.5f, 0.5f);
+        panelRt.sizeDelta = new Vector2(700f, 290f);
+        var panelImage = panel.GetComponent<Image>();
+        panelImage.color = new Color(0.11f, 0.06f, 0.28f, 0.98f);
+        var panelOutline = panel.GetComponent<Outline>();
+        panelOutline.effectColor = new Color(0.88f, 0.70f, 0.16f, 0.9f);
+        panelOutline.effectDistance = new Vector2(2f, -2f);
+
+        var panelLayout = panel.GetComponent<VerticalLayoutGroup>();
+        panelLayout.padding = new RectOffset(30, 30, 22, 22);
+        panelLayout.spacing = 16f;
+        panelLayout.childAlignment = TextAnchor.UpperCenter;
+        panelLayout.childControlWidth = true;
+        panelLayout.childControlHeight = false;
+        panelLayout.childForceExpandWidth = true;
+        panelLayout.childForceExpandHeight = false;
+
+        var title = new GameObject("Title", typeof(RectTransform), typeof(LayoutElement), typeof(TextMeshProUGUI));
+        title.transform.SetParent(panelRt, false);
+        var titleLe = title.GetComponent<LayoutElement>();
+        titleLe.preferredHeight = 52f;
+        var titleTmp = title.GetComponent<TextMeshProUGUI>();
+        if (tableFont != null) titleTmp.font = tableFont;
+        titleTmp.text = "Confirm Deletion";
+        titleTmp.fontSize = 38f;
+        titleTmp.alignment = TextAlignmentOptions.Center;
+        titleTmp.color = headerTextColor;
+
+        var msg = new GameObject("Message", typeof(RectTransform), typeof(LayoutElement), typeof(TextMeshProUGUI));
+        msg.transform.SetParent(panelRt, false);
+        var msgLe = msg.GetComponent<LayoutElement>();
+        msgLe.preferredHeight = 88f;
+        var msgTmp = msg.GetComponent<TextMeshProUGUI>();
+        if (tableFont != null) msgTmp.font = tableFont;
+        msgTmp.text = "Are you sure you want to delete this question?";
+        msgTmp.fontSize = 30f;
+        msgTmp.alignment = TextAlignmentOptions.Center;
+        msgTmp.color = new Color(0.92f, 0.92f, 1f, 1f);
+
+        var buttons = new GameObject("Buttons", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+        buttons.transform.SetParent(panelRt, false);
+        var buttonsLe = buttons.GetComponent<LayoutElement>();
+        buttonsLe.preferredHeight = 74f;
+        var buttonsLayout = buttons.GetComponent<HorizontalLayoutGroup>();
+        buttonsLayout.spacing = 30f;
+        buttonsLayout.childAlignment = TextAnchor.MiddleCenter;
+        buttonsLayout.childControlWidth = false;
+        buttonsLayout.childControlHeight = false;
+        buttonsLayout.childForceExpandWidth = false;
+        buttonsLayout.childForceExpandHeight = false;
+
+        CreateConfirmButton(buttons.transform, "YES", new Color(0.12f, 0.72f, 0.28f, 1f), () =>
+        {
+            HideDeleteConfirm();
+            pendingDeleteAction?.Invoke();
+            pendingDeleteAction = null;
+        });
+
+        CreateConfirmButton(buttons.transform, "NO", new Color(0.88f, 0.24f, 0.26f, 1f), () =>
+        {
+            pendingDeleteAction = null;
+            HideDeleteConfirm();
+        });
+
+        deleteConfirmOverlay.SetActive(false);
+    }
+
+    void CreateConfirmButton(Transform parent, string label, Color color, UnityAction onClick)
+    {
+        var btnGo = new GameObject(
+            label + " Button",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(Button),
+            typeof(LayoutElement),
+            typeof(Outline));
+        btnGo.transform.SetParent(parent, false);
+
+        var le = btnGo.GetComponent<LayoutElement>();
+        le.preferredWidth = 190f;
+        le.preferredHeight = 62f;
+
+        var img = btnGo.GetComponent<Image>();
+        img.color = color;
+        var outline = btnGo.GetComponent<Outline>();
+        outline.effectColor = new Color(1f, 1f, 1f, 0.22f);
+        outline.effectDistance = new Vector2(1f, -1f);
+
+        var btn = btnGo.GetComponent<Button>();
+        btn.targetGraphic = img;
+        btn.onClick.AddListener(onClick);
+
+        var txt = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        txt.transform.SetParent(btnGo.transform, false);
+        var txtRt = txt.GetComponent<RectTransform>();
+        txtRt.anchorMin = Vector2.zero;
+        txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = Vector2.zero;
+        txtRt.offsetMax = Vector2.zero;
+        var tmp = txt.GetComponent<TextMeshProUGUI>();
+        if (tableFont != null) tmp.font = tableFont;
+        tmp.text = label;
+        tmp.fontSize = 30f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = Color.white;
+    }
+
+    void HideDeleteConfirm()
+    {
+        if (deleteConfirmOverlay != null)
+            deleteConfirmOverlay.SetActive(false);
     }
 
     ColumnWidths GetResolvedColumnWidths()

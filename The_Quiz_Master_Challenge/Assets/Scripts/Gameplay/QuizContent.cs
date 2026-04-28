@@ -277,6 +277,7 @@ public class TeacherQuestionRecord
     public int correctOptionIndex;
     public string correctAnswer;
     public long createdUtcUnix;
+    public bool isHidden;
 }
 
 [Serializable]
@@ -350,6 +351,64 @@ public static class TeacherQuestionStore
         return true;
     }
 
+    public static TeacherQuestionRecord GetQuestionById(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+        var needle = id.Trim();
+        foreach (var q in GetAllRecords())
+        {
+            if (q == null) continue;
+            if (string.Equals(q.id, needle, StringComparison.OrdinalIgnoreCase))
+                return q;
+        }
+        return null;
+    }
+
+    public static bool UpdateQuestionById(string id, TeacherQuestionRecord updated)
+    {
+        if (string.IsNullOrWhiteSpace(id) || updated == null) return false;
+
+        var w = LoadWrapper();
+        var items = w.items ?? EmptyItems();
+        var target = id.Trim();
+        for (var i = 0; i < items.Length; i++)
+        {
+            var existing = items[i];
+            if (existing == null) continue;
+            if (!string.Equals(existing.id, target, StringComparison.OrdinalIgnoreCase)) continue;
+
+            updated.id = existing.id;
+            if (updated.createdUtcUnix <= 0) updated.createdUtcUnix = existing.createdUtcUnix;
+            items[i] = updated;
+            w.items = items;
+            SaveWrapper(w);
+            return true;
+        }
+
+        return false;
+    }
+
+    public static bool SetHiddenById(string id, bool isHidden)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return false;
+
+        var w = LoadWrapper();
+        var items = w.items ?? EmptyItems();
+        var target = id.Trim();
+        for (var i = 0; i < items.Length; i++)
+        {
+            var q = items[i];
+            if (q == null) continue;
+            if (!string.Equals(q.id, target, StringComparison.OrdinalIgnoreCase)) continue;
+            q.isHidden = isHidden;
+            w.items = items;
+            SaveWrapper(w);
+            return true;
+        }
+
+        return false;
+    }
+
     public static string AllocateNextQuestionId()
     {
         var w = LoadWrapper();
@@ -380,6 +439,7 @@ public static class TeacherQuestionStore
         foreach (var r in GetAllRecords())
         {
             if (r == null || string.IsNullOrWhiteSpace(r.question)) continue;
+            if (r.isHidden) continue;
             if (!RecordMatchesStudentQuiz(r, studentQuizId)) continue;
             records.Add(r);
         }
@@ -442,6 +502,7 @@ public static class TeacherQuestionStore
         foreach (var r in GetAllRecords())
         {
             if (r == null || string.IsNullOrWhiteSpace(r.question)) continue;
+            if (r.isHidden) continue;
             if (!RecordMatchesStudentQuiz(r, studentQuizId)) continue;
             if (!DifficultyMatches(r.difficulty, difficultyTier)) continue;
             result.Add(ToQuizQuestionData(r));
