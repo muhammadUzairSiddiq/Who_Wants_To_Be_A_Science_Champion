@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 1d8f3d59ead7c4c4592e4d2a3c25df34
+guid: c71436c5b879f3449884eb7336612798
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8022704631996959665
-    second: Score Card_0
+      213: 5571973092267743803
+    second: Highlighter_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Score Card_0
+      name: Highlighter_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 636
-        height: 1299
+        width: 1385
+        height: 215
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1bb4f005b5f565f60800000000000000
-      internalID: 8022704631996959665
+      spriteID: b3a57ae7100a35d40800000000000000
+      internalID: 5571973092267743803
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Score Card_0: 8022704631996959665
+      Highlighter_0: 5571973092267743803
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
