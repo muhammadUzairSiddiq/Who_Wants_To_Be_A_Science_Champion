@@ -132,13 +132,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Quiz game mode buttons with glowing effect_0
+      name: Quicl Play
       rect:
         serializedVersion: 2
-        x: 0
-        y: 333
-        width: 768
-        height: 333
+        x: 178
+        y: 355
+        width: 565
+        height: 311
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -154,13 +154,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Quiz game mode buttons with glowing effect_1
+      name: Team Play
       rect:
         serializedVersion: 2
-        x: 768
-        y: 333
-        width: 768
-        height: 333
+        x: 797
+        y: 355
+        width: 584
+        height: 311
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -171,50 +171,6 @@ TextureImporter:
       bones: []
       spriteID: 61c8aecb24d8f4ec0800000000000000
       internalID: -3580487860959409130
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Quiz game mode buttons with glowing effect_2
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 0
-        width: 768
-        height: 333
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: fde35eec41c996b20800000000000000
-      internalID: 3128203029369929439
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Quiz game mode buttons with glowing effect_3
-      rect:
-        serializedVersion: 2
-        x: 768
-        y: 0
-        width: 768
-        height: 333
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: e2a8ea8e219a7734d9276ed061a62f45
-      internalID: 545063491
       vertices: []
       indices: 
       edges: []
@@ -235,10 +191,10 @@ TextureImporter:
       - key: SpriteEditor.SliceSettings
         value: '{"sliceOnImport":false,"gridCellCount":{"x":2.0,"y":2.0},"gridSpriteSize":{"x":768.0,"y":333.0},"gridSpriteOffset":{"x":0.0,"y":358.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Quiz game mode buttons with glowing effect_0: -2160994938020771392
-      Quiz game mode buttons with glowing effect_1: -3580487860959409130
+      Quicl Play: -2160994938020771392
       Quiz game mode buttons with glowing effect_2: 3128203029369929439
       Quiz game mode buttons with glowing effect_3: 545063491
+      Team Play: -3580487860959409130
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
