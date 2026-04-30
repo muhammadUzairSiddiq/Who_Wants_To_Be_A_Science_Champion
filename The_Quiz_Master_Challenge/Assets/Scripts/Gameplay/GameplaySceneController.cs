@@ -2606,7 +2606,7 @@ public class GameplaySceneController : MonoBehaviour
 
         dimImg.sprite = white;
 
-        dimImg.color = new Color(0f, 0f, 0f, 0.42f);
+        dimImg.color = new Color(0f, 0f, 0f, 0.34f);
 
         dimImg.raycastTarget = true;
 
@@ -2626,15 +2626,15 @@ public class GameplaySceneController : MonoBehaviour
 
         var plt = plate.GetComponent<RectTransform>();
 
-        plt.anchorMin = new Vector2(0.06f, 1f);
+        plt.anchorMin = new Vector2(0.18f, 1f);
 
-        plt.anchorMax = new Vector2(0.94f, 1f);
+        plt.anchorMax = new Vector2(0.82f, 1f);
 
         plt.pivot = new Vector2(0.5f, 1f);
 
-        plt.sizeDelta = new Vector2(0f, 104f);
+        plt.sizeDelta = new Vector2(0f, 52f);
 
-        plt.anchoredPosition = new Vector2(0f, -20f);
+        plt.anchoredPosition = new Vector2(0f, -12f);
 
 
 
@@ -2650,11 +2650,13 @@ public class GameplaySceneController : MonoBehaviour
 
         _roundBannerText.enableAutoSizing = true;
 
-        _roundBannerText.fontSizeMin = 28f;
+        _roundBannerText.fontSizeMin = 16f;
 
-        _roundBannerText.fontSizeMax = 80f;
+        _roundBannerText.fontSizeMax = 40f;
 
-        _roundBannerText.fontSize = 56f;
+        _roundBannerText.fontSize = 28f;
+
+        _roundBannerText.characterSpacing = 2f;
 
         _roundBannerText.textWrappingMode = TextWrappingModes.NoWrap;
 
@@ -2666,9 +2668,9 @@ public class GameplaySceneController : MonoBehaviour
 
         var trt = _roundBannerText.rectTransform;
 
-        trt.anchorMin = new Vector2(0.04f, 0.08f);
+        trt.anchorMin = new Vector2(0.06f, 0.1f);
 
-        trt.anchorMax = new Vector2(0.96f, 0.92f);
+        trt.anchorMax = new Vector2(0.94f, 0.9f);
 
         trt.offsetMin = trt.offsetMax = Vector2.zero;
 
