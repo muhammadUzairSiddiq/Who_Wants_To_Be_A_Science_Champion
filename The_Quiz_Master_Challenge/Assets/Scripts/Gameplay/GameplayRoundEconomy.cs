@@ -55,6 +55,7 @@ public class GameplayRoundEconomy : MonoBehaviour
         _canvasRoot = canvasRoot;
         ResolvePrizeLadder();
         ResolveTeamScoresAndNames();
+        ApplySavedCustomTeamDisplayNames();
         ResolveTeamChances();
         ResolveSoloChancesAndScore();
         RefreshPrizeLadderDisplay();
@@ -236,6 +237,20 @@ public class GameplayRoundEconomy : MonoBehaviour
             var row = _teamsRoot.GetChild(i);
             _teamScoreTexts[i] = FindTmpByNameContains(row, "TEAM SCORE");
             _teamNameTexts[i] = FindTmpByNameContains(row, "TEAM NAME");
+        }
+    }
+
+    void ApplySavedCustomTeamDisplayNames()
+    {
+        if (PlayerPrefs.GetInt(StudentCredentials.PrefsViaTeamPlayKey, 0) != 1)
+            return;
+
+        for (var i = 0; i < 4; i++)
+        {
+            var nm = StudentCredentials.GetTeamDisplayNameForSlot(i);
+            if (string.IsNullOrEmpty(nm)) continue;
+            if (_teamNameTexts[i] != null)
+                _teamNameTexts[i].text = nm;
         }
     }
 

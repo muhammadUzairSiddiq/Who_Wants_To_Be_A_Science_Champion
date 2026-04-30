@@ -39,6 +39,7 @@ public class MenuSceneController : MonoBehaviour
     GameObject _loadingRoot;
     TMP_Text _loadingLabel;
     readonly List<Toggle> _teamTogglesOrdered = new();
+    readonly TMP_InputField[] _teamNameInputs = new TMP_InputField[4];
 
     void Awake()
     {
@@ -97,18 +98,25 @@ public class MenuSceneController : MonoBehaviour
         if (mainMenuBackButton == null)
             mainMenuBackButton = transform.Find("Main Menu/Back Button")?.GetComponent<Button>();
 
-        CollectTeamToggles();
+        CollectTeamTogglesAndNameInputs();
     }
 
-    void CollectTeamToggles()
+    void CollectTeamTogglesAndNameInputs()
     {
         _teamTogglesOrdered.Clear();
+        for (var i = 0; i < _teamNameInputs.Length; i++)
+            _teamNameInputs[i] = null;
+
         var panel = transform.Find("Team Selection/Choose TEAM TYPE Panel/Button Panel");
         if (panel == null || panel.childCount < 4) return;
         for (var i = 0; i < 4; i++)
         {
-            var tgl = panel.GetChild(i).GetComponentInChildren<Toggle>(true);
+            var row = panel.GetChild(i);
+            var tgl = row.GetComponentInChildren<Toggle>(true);
             if (tgl != null) _teamTogglesOrdered.Add(tgl);
+            var inp = row.GetComponentInChildren<TMP_InputField>(true);
+            if (inp != null)
+                _teamNameInputs[i] = inp;
         }
     }
 
@@ -149,6 +157,7 @@ public class MenuSceneController : MonoBehaviour
         PlayerPrefs.DeleteKey(LoginSceneController.PrefsRollNumberKey);
         PlayerPrefs.DeleteKey(StudentCredentials.PrefsSelectedQuizKey);
         PlayerPrefs.DeleteKey(StudentCredentials.PrefsSelectedTeamsKey);
+        PlayerPrefs.DeleteKey(StudentCredentials.PrefsTeamDisplayNamesKey);
         PlayerPrefs.DeleteKey(StudentCredentials.PrefsViaTeamPlayKey);
         PlayerPrefs.Save();
         if (!string.IsNullOrEmpty(loginSceneName))
@@ -226,7 +235,11 @@ public class MenuSceneController : MonoBehaviour
         var encoded = string.Join(",", selected);
         PlayerPrefs.SetString(StudentCredentials.PrefsSelectedTeamsKey, encoded);
         PlayerPrefs.SetInt(StudentCredentials.PrefsViaTeamPlayKey, 1);
-        PlayerPrefs.Save();
+
+        var names = new string[4];
+        for (var i = 0; i < 4; i++)
+            names[i] = _teamNameInputs[i] != null ? _teamNameInputs[i].text : string.Empty;
+        StudentCredentials.SetTeamDisplayNamesFromSlots(names);
 
         ShowQuizSelectionOnly();
     }

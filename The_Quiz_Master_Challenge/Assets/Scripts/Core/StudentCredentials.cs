@@ -8,6 +8,8 @@ public static class StudentCredentials
     public const string PrefsSelectedQuizKey = "QuizMaster_SelectedQuizType";
     public const string PrefsSelectedTeamsKey = "QuizMaster_SelectedTeamLetters";
     public const string PrefsViaTeamPlayKey = "QuizMaster_ViaTeamPlay";
+    /// <summary>Four display names from menu team setup (slots 0–3 = teams A–D), separated by ASCII Record Separator.</summary>
+    public const string PrefsTeamDisplayNamesKey = "QuizMaster_TeamDisplayNamesV1";
     public const string PrefsCoinsPrefix = "QuizMaster_Coins_";
 
     static readonly Regex StructuredRoll = new(@"^\d{4}-\d{2}-\d{3}$", RegexOptions.CultureInvariant);
@@ -39,6 +41,50 @@ public static class StudentCredentials
     }
 
     public static void AddCoins(int delta) => SetCoins(Mathf.Max(0, GetCoins() + delta));
+
+    const char TeamNameDelimiter = '\x1e';
+    const int MaxTeamDisplayNameLength = 48;
+
+    public static void SetTeamDisplayNamesFromSlots(System.Collections.Generic.IReadOnlyList<string> fourSlots)
+    {
+        var parts = new string[4];
+        for (var i = 0; i < 4; i++)
+        {
+            var s = fourSlots != null && i < fourSlots.Count ? fourSlots[i] : string.Empty;
+            parts[i] = SanitizeTeamDisplayName(s);
+        }
+
+        PlayerPrefs.SetString(PrefsTeamDisplayNamesKey, string.Join(TeamNameDelimiter.ToString(), parts));
+        PlayerPrefs.Save();
+    }
+
+    /// <summary>Slot 0 = Team A … slot 3 = Team D. Empty if unset.</summary>
+    public static string GetTeamDisplayNameForSlot(int slotIndex0To3)
+    {
+        var parts = LoadTeamDisplayNamesParts();
+        if (slotIndex0To3 < 0 || slotIndex0To3 >= parts.Length) return string.Empty;
+        return parts[slotIndex0To3] ?? string.Empty;
+    }
+
+    static string[] LoadTeamDisplayNamesParts()
+    {
+        var raw = PlayerPrefs.GetString(PrefsTeamDisplayNamesKey, string.Empty);
+        if (string.IsNullOrEmpty(raw)) return new[] { "", "", "", "" };
+        var split = raw.Split(TeamNameDelimiter);
+        var result = new string[4];
+        for (var i = 0; i < 4; i++)
+            result[i] = i < split.Length ? split[i].Trim() : string.Empty;
+        return result;
+    }
+
+    static string SanitizeTeamDisplayName(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return string.Empty;
+        s = s.Trim().Replace(TeamNameDelimiter, ' ');
+        if (s.Length > MaxTeamDisplayNameLength)
+            s = s.Substring(0, MaxTeamDisplayNameLength).Trim();
+        return s;
+    }
 
     public static bool TryParseStructuredRoll(string roll, out int year, out int classNumber, out string actualRollDigits)
     {
