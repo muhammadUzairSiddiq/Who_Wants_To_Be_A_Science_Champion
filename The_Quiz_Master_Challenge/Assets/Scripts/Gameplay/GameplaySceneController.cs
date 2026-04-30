@@ -20,10 +20,6 @@ public class GameplaySceneController : MonoBehaviour
 
 {
 
-    static Sprite s_whiteSprite;
-
-
-
     [Header("Scenes")]
 
     [SerializeField] string menuSceneName = "Menu";
@@ -71,6 +67,12 @@ public class GameplaySceneController : MonoBehaviour
     [SerializeField] float transitionMinScale = 0.94f;
 
     [SerializeField] float transitionPeakScale = 1.03f;
+
+
+
+    [Header("Round banners (Easy / Medium / Hard blocks)")]
+
+    [SerializeField] float roundBannerDisplaySeconds = 2f;
 
 
 
@@ -157,6 +159,12 @@ public class GameplaySceneController : MonoBehaviour
     TMP_Text _timeUpMessage;
 
     Button _timeUpMenuButton;
+
+
+
+    GameObject _roundBannerRoot;
+
+    TMP_Text _roundBannerText;
 
 
 
@@ -606,7 +614,7 @@ public class GameplaySceneController : MonoBehaviour
 
         rt.pivot = new Vector2(0.5f, 1f);
 
-        rt.sizeDelta = new Vector2(520f, 148f);
+        rt.sizeDelta = new Vector2(540f, 168f);
 
         rt.anchoredPosition = new Vector2(0f, -8f);
 
@@ -672,9 +680,7 @@ public class GameplaySceneController : MonoBehaviour
 
         var pImg = panel.GetComponent<Image>();
 
-        pImg.sprite = white;
-
-        pImg.color = new Color(0.14f, 0.08f, 0.24f, 0.97f);
+        RuntimeGeneratedUiStyle.ApplyPanel(pImg);
 
         pImg.raycastTarget = true;
 
@@ -686,15 +692,21 @@ public class GameplaySceneController : MonoBehaviour
 
         prt.pivot = new Vector2(0.5f, 1f);
 
-        prt.sizeDelta = new Vector2(520f, 148f);
+        prt.sizeDelta = new Vector2(540f, 168f);
 
         prt.anchoredPosition = new Vector2(0f, -8f);
 
-        var outline = panel.AddComponent<Outline>();
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
 
-        outline.effectDistance = new Vector2(2f, -2f);
+        {
 
-        outline.effectColor = new Color(0.92f, 0.75f, 0.22f, 1f);
+            var outline = panel.AddComponent<Outline>();
+
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            outline.effectColor = new Color(0.92f, 0.75f, 0.22f, 1f);
+
+        }
 
 
 
@@ -730,19 +742,19 @@ public class GameplaySceneController : MonoBehaviour
 
         var okImg = okGo.GetComponent<Image>();
 
-        okImg.sprite = white;
-
-        okImg.color = new Color(0.5f, 0.35f, 0.12f, 1f);
+        RuntimeGeneratedUiStyle.ApplyButton(okImg);
 
         var okRt = okGo.GetComponent<RectTransform>();
 
-        okRt.anchorMin = new Vector2(0.34f, 0.06f);
+        okRt.anchorMin = new Vector2(0.32f, 0.06f);
 
-        okRt.anchorMax = new Vector2(0.66f, 0.26f);
+        okRt.anchorMax = new Vector2(0.68f, 0.28f);
 
         okRt.offsetMin = okRt.offsetMax = Vector2.zero;
 
-        okGo.AddComponent<Outline>().effectColor = new Color(1f, 0.88f, 0.4f, 0.9f);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+
+            okGo.AddComponent<Outline>().effectColor = new Color(1f, 0.88f, 0.4f, 0.9f);
 
 
 
@@ -1332,9 +1344,7 @@ public class GameplaySceneController : MonoBehaviour
 
         var pImg = panel.GetComponent<Image>();
 
-        pImg.sprite = white;
-
-        pImg.color = new Color(0.12f, 0.06f, 0.22f, 0.97f);
+        RuntimeGeneratedUiStyle.ApplyPanel(pImg);
 
         pImg.raycastTarget = false;
 
@@ -1346,15 +1356,21 @@ public class GameplaySceneController : MonoBehaviour
 
         prt.pivot = new Vector2(0.5f, 0.5f);
 
-        prt.sizeDelta = new Vector2(460f, 120f);
+        prt.sizeDelta = new Vector2(500f, 132f);
 
         prt.anchoredPosition = Vector2.zero;
 
-        var outline = panel.AddComponent<Outline>();
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
 
-        outline.effectColor = new Color(0.95f, 0.72f, 0.18f, 1f);
+        {
 
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
+            var outline = panel.AddComponent<Outline>();
+
+            outline.effectColor = new Color(0.95f, 0.72f, 0.18f, 1f);
+
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        }
 
 
 
@@ -1389,6 +1405,8 @@ public class GameplaySceneController : MonoBehaviour
         art.sizeDelta = new Vector2(0f, 5f);
 
         art.anchoredPosition = Vector2.zero;
+
+        accent.SetActive(!RuntimeGeneratedUiStyle.UsePremiumChrome());
 
 
 
@@ -1677,6 +1695,10 @@ public class GameplaySceneController : MonoBehaviour
         _timeUpEnded = false;
 
         RefreshTimerLabelForNewRound();
+
+
+
+        yield return StartCoroutine(ShowRoundBannerIfNeededRoutine());
 
 
 
@@ -2228,9 +2250,7 @@ public class GameplaySceneController : MonoBehaviour
 
         var pImg = panel.GetComponent<Image>();
 
-        pImg.sprite = white;
-
-        pImg.color = new Color(0.16f, 0.09f, 0.26f, 1f);
+        RuntimeGeneratedUiStyle.ApplyPanel(pImg);
 
         var prt = panel.GetComponent<RectTransform>();
 
@@ -2240,11 +2260,13 @@ public class GameplaySceneController : MonoBehaviour
 
         prt.pivot = new Vector2(0.5f, 0.5f);
 
-        prt.sizeDelta = new Vector2(520f, 300f);
+        prt.sizeDelta = new Vector2(560f, 320f);
 
         prt.anchoredPosition = Vector2.zero;
 
-        panel.AddComponent<Outline>().effectColor = new Color(0.88f, 0.72f, 0.22f, 1f);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+
+            panel.AddComponent<Outline>().effectColor = new Color(0.88f, 0.72f, 0.22f, 1f);
 
 
 
@@ -2278,15 +2300,13 @@ public class GameplaySceneController : MonoBehaviour
 
         var bImg = btnGo.GetComponent<Image>();
 
-        bImg.sprite = white;
-
-        bImg.color = new Color(0.42f, 0.28f, 0.62f, 1f);
+        RuntimeGeneratedUiStyle.ApplyButton(bImg);
 
         var okRt = btnGo.GetComponent<RectTransform>();
 
-        okRt.anchorMin = new Vector2(0.32f, 0.08f);
+        okRt.anchorMin = new Vector2(0.3f, 0.07f);
 
-        okRt.anchorMax = new Vector2(0.68f, 0.22f);
+        okRt.anchorMax = new Vector2(0.7f, 0.24f);
 
         okRt.offsetMin = okRt.offsetMax = Vector2.zero;
 
@@ -2339,6 +2359,156 @@ public class GameplaySceneController : MonoBehaviour
         else
 
             timerLabel.text = "0";
+
+    }
+
+
+
+    IEnumerator ShowRoundBannerIfNeededRoutine()
+
+    {
+
+        var label = RoundBannerLabelForIndex(_teacherSequentialIndex);
+
+        if (label == null) yield break;
+
+        EnsureRoundBannerOverlay();
+
+        _roundBannerText.text = label;
+
+        _roundBannerRoot.SetActive(true);
+
+        yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, roundBannerDisplaySeconds));
+
+        _roundBannerRoot.SetActive(false);
+
+    }
+
+
+
+    static string RoundBannerLabelForIndex(int ladderIndexZeroBased)
+
+    {
+
+        return ladderIndexZeroBased switch
+
+        {
+
+            0 => "ROUND 01",
+
+            5 => "ROUND 02",
+
+            10 => "ROUND 03",
+
+            _ => null
+
+        };
+
+    }
+
+
+
+    void EnsureRoundBannerOverlay()
+
+    {
+
+        if (_roundBannerRoot != null) return;
+
+        var white = GetWhiteSprite();
+
+        var root = new GameObject("RoundBannerOverlay", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
+
+        root.transform.SetParent(transform, false);
+
+        var canvas = root.GetComponent<Canvas>();
+
+        canvas.overrideSorting = true;
+
+        canvas.sortingOrder = 12500;
+
+        StretchFull(root.GetComponent<RectTransform>());
+
+
+
+        var dim = new GameObject("Dim", typeof(Image));
+
+        dim.transform.SetParent(root.transform, false);
+
+        var dimImg = dim.GetComponent<Image>();
+
+        dimImg.sprite = white;
+
+        dimImg.color = new Color(0f, 0f, 0f, 0.42f);
+
+        dimImg.raycastTarget = true;
+
+        StretchFull(dim.GetComponent<RectTransform>());
+
+
+
+        var plate = new GameObject("Plate", typeof(Image));
+
+        plate.transform.SetParent(root.transform, false);
+
+        var plateImg = plate.GetComponent<Image>();
+
+        RuntimeGeneratedUiStyle.ApplyPanel(plateImg);
+
+        plateImg.raycastTarget = false;
+
+        var plt = plate.GetComponent<RectTransform>();
+
+        plt.anchorMin = new Vector2(0.06f, 1f);
+
+        plt.anchorMax = new Vector2(0.94f, 1f);
+
+        plt.pivot = new Vector2(0.5f, 1f);
+
+        plt.sizeDelta = new Vector2(0f, 104f);
+
+        plt.anchoredPosition = new Vector2(0f, -20f);
+
+
+
+        var titleGo = new GameObject("RoundTitle", typeof(TextMeshProUGUI));
+
+        titleGo.transform.SetParent(plate.transform, false);
+
+        _roundBannerText = titleGo.GetComponent<TextMeshProUGUI>();
+
+        _roundBannerText.color = new Color(1f, 0.93f, 0.72f, 1f);
+
+        _roundBannerText.fontStyle = FontStyles.Bold;
+
+        _roundBannerText.enableAutoSizing = true;
+
+        _roundBannerText.fontSizeMin = 28f;
+
+        _roundBannerText.fontSizeMax = 80f;
+
+        _roundBannerText.fontSize = 56f;
+
+        _roundBannerText.textWrappingMode = TextWrappingModes.NoWrap;
+
+        _roundBannerText.verticalAlignment = VerticalAlignmentOptions.Middle;
+
+        _roundBannerText.horizontalAlignment = HorizontalAlignmentOptions.Center;
+
+
+
+        var trt = _roundBannerText.rectTransform;
+
+        trt.anchorMin = new Vector2(0.04f, 0.08f);
+
+        trt.anchorMax = new Vector2(0.96f, 0.92f);
+
+        trt.offsetMin = trt.offsetMax = Vector2.zero;
+
+
+
+        _roundBannerRoot = root;
+
+        root.SetActive(false);
 
     }
 
@@ -2934,9 +3104,7 @@ public class GameplaySceneController : MonoBehaviour
 
         var pImg = panel.GetComponent<Image>();
 
-        pImg.sprite = white;
-
-        pImg.color = new Color(0.16f, 0.09f, 0.26f, 1f);
+        RuntimeGeneratedUiStyle.ApplyPanel(pImg);
 
         var prt = panel.GetComponent<RectTransform>();
 
@@ -2946,11 +3114,13 @@ public class GameplaySceneController : MonoBehaviour
 
         prt.pivot = new Vector2(0.5f, 0.5f);
 
-        prt.sizeDelta = new Vector2(540f, 320f);
+        prt.sizeDelta = new Vector2(580f, 340f);
 
         prt.anchoredPosition = Vector2.zero;
 
-        panel.AddComponent<Outline>().effectColor = new Color(0.88f, 0.72f, 0.22f, 1f);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+
+            panel.AddComponent<Outline>().effectColor = new Color(0.88f, 0.72f, 0.22f, 1f);
 
 
 
@@ -3010,15 +3180,13 @@ public class GameplaySceneController : MonoBehaviour
 
         var bImg = btnGo.GetComponent<Image>();
 
-        bImg.sprite = white;
-
-        bImg.color = new Color(0.42f, 0.28f, 0.62f, 1f);
+        RuntimeGeneratedUiStyle.ApplyButton(bImg);
 
         var brt = btnGo.GetComponent<RectTransform>();
 
-        brt.anchorMin = new Vector2(0.28f, 0.1f);
+        brt.anchorMin = new Vector2(0.26f, 0.09f);
 
-        brt.anchorMax = new Vector2(0.72f, 0.26f);
+        brt.anchorMax = new Vector2(0.74f, 0.27f);
 
         brt.offsetMin = brt.offsetMax = Vector2.zero;
 
@@ -3074,17 +3242,7 @@ public class GameplaySceneController : MonoBehaviour
 
 
 
-    static Sprite GetWhiteSprite()
-
-    {
-
-        if (s_whiteSprite == null)
-
-            s_whiteSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 100f);
-
-        return s_whiteSprite;
-
-    }
+    static Sprite GetWhiteSprite() => RuntimeGeneratedUiStyle.WhiteFallbackSprite();
 
 
 

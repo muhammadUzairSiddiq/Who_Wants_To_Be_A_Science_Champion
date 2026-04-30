@@ -237,22 +237,61 @@ public static class QuizContent
     }
 
     /// <summary>
-    /// Teacher questions for the selected student quiz are played in id order (Q001, Q002, …), one per round.
-    /// After the authored list is exhausted, falls back to the built-in pool (random, avoiding immediate repeat).
+    /// Levels 1–5 = Round 1 (Easy primary), 6–10 = Round 2 (Medium), 11–15 = Round 3 (Hard).
+    /// Teacher questions are filtered by difficulty and ordered by Q### id; within each round slot, missing primary-tier
+    /// questions are filled from the next tiers in order (e.g. only 4 Easy → 5th slot uses Medium). Built-in pool if empty.
     /// </summary>
     public static QuizQuestionData GetSequentialForCategoryWithProgress(
         string quizId,
         int teacherSequentialIndex,
         int forcedSlotIndex,
+        QuizQuestionData previous) =>
+        GetQuestionForLadderSlot(quizId, teacherSequentialIndex, forcedSlotIndex, previous);
+
+    public static QuizQuestionData GetQuestionForLadderSlot(
+        string quizId,
+        int ladderIndexZeroBased,
+        int forcedSlotIndex,
         QuizQuestionData previous)
     {
-        var teacherPool = TeacherQuestionStore.BuildOrderedQuizDataPoolForStudentQuiz(quizId);
-        if (teacherPool.Count > 0)
+        if (string.IsNullOrWhiteSpace(quizId)) quizId = "Mixed";
+        ladderIndexZeroBased = Mathf.Clamp(ladderIndexZeroBased, 0, QuizScoreLadder.LevelCount - 1);
+
+        if (forcedSlotIndex >= 0)
         {
-            if (forcedSlotIndex >= 0 && forcedSlotIndex < teacherPool.Count)
+            var teacherPool = TeacherQuestionStore.BuildOrderedQuizDataPoolForStudentQuiz(quizId);
+            if (forcedSlotIndex < teacherPool.Count)
                 return teacherPool[forcedSlotIndex];
-            if (teacherSequentialIndex >= 0 && teacherSequentialIndex < teacherPool.Count)
-                return teacherPool[teacherSequentialIndex];
+        }
+
+        var posInRound = ladderIndexZeroBased % 5;
+        var roundIndex = ladderIndexZeroBased / 5;
+
+        string[] tierOrder = roundIndex switch
+        {
+            0 => new[] { "Easy", "Medium", "Hard" },
+            1 => new[] { "Medium", "Hard", "Easy" },
+            _ => new[] { "Hard", "Medium", "Easy" }
+        };
+
+        var easy = TeacherQuestionStore.BuildOrderedFilteredQuizDataPool(quizId, "Easy");
+        var medium = TeacherQuestionStore.BuildOrderedFilteredQuizDataPool(quizId, "Medium");
+        var hard = TeacherQuestionStore.BuildOrderedFilteredQuizDataPool(quizId, "Hard");
+
+        List<QuizQuestionData> Pool(string tier)
+        {
+            if (string.Equals(tier, "Easy", StringComparison.OrdinalIgnoreCase)) return easy;
+            if (string.Equals(tier, "Medium", StringComparison.OrdinalIgnoreCase)) return medium;
+            return hard;
+        }
+
+        var idx = posInRound;
+        foreach (var tier in tierOrder)
+        {
+            var pool = Pool(tier);
+            if (idx < pool.Count)
+                return pool[idx];
+            idx -= pool.Count;
         }
 
         return GetRandomForCategoryAvoiding(quizId, forcedSlotIndex, previous);
@@ -508,6 +547,26 @@ public static class TeacherQuestionStore
             result.Add(ToQuizQuestionData(r));
         }
 
+        return result;
+    }
+
+    /// <summary>Same as <see cref="BuildFilteredQuizDataPool"/> but sorted by Q001-style id for stable round order.</summary>
+    public static List<QuizQuestionData> BuildOrderedFilteredQuizDataPool(string studentQuizId, string difficultyTier)
+    {
+        var records = new List<TeacherQuestionRecord>();
+        foreach (var r in GetAllRecords())
+        {
+            if (r == null || string.IsNullOrWhiteSpace(r.question)) continue;
+            if (r.isHidden) continue;
+            if (!RecordMatchesStudentQuiz(r, studentQuizId)) continue;
+            if (!DifficultyMatches(r.difficulty, difficultyTier)) continue;
+            records.Add(r);
+        }
+
+        records.Sort(CompareRecordsByQuestionId);
+        var result = new List<QuizQuestionData>(records.Count);
+        foreach (var r in records)
+            result.Add(ToQuizQuestionData(r));
         return result;
     }
 

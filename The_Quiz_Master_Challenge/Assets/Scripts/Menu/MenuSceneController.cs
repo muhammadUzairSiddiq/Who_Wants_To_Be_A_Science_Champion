@@ -39,7 +39,6 @@ public class MenuSceneController : MonoBehaviour
     GameObject _loadingRoot;
     TMP_Text _loadingLabel;
     readonly List<Toggle> _teamTogglesOrdered = new();
-    static Sprite s_whiteSprite;
 
     void Awake()
     {
@@ -309,15 +308,15 @@ public class MenuSceneController : MonoBehaviour
         var glass = new GameObject("Panel", typeof(Image));
         glass.transform.SetParent(overlay.transform, false);
         var gImg = glass.GetComponent<Image>();
-        gImg.sprite = white;
-        gImg.color = new Color(0.12f, 0.08f, 0.2f, 0.95f);
+        RuntimeGeneratedUiStyle.ApplyPanel(gImg);
         var grt = glass.GetComponent<RectTransform>();
         grt.anchorMin = new Vector2(0.5f, 0.5f);
         grt.anchorMax = new Vector2(0.5f, 0.5f);
         grt.pivot = new Vector2(0.5f, 0.5f);
-        grt.sizeDelta = new Vector2(560f, 160f);
+        grt.sizeDelta = new Vector2(600f, 176f);
         grt.anchoredPosition = Vector2.zero;
-        glass.AddComponent<Outline>().effectColor = new Color(0.85f, 0.7f, 0.25f);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+            glass.AddComponent<Outline>().effectColor = new Color(0.85f, 0.7f, 0.25f);
 
         var txtGo = new GameObject("Label", typeof(TextMeshProUGUI));
         txtGo.transform.SetParent(glass.transform, false);
@@ -341,12 +340,7 @@ public class MenuSceneController : MonoBehaviour
         rt.offsetMax = Vector2.zero;
     }
 
-    static Sprite GetWhiteSprite()
-    {
-        if (s_whiteSprite == null)
-            s_whiteSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 100f);
-        return s_whiteSprite;
-    }
+    static Sprite GetWhiteSprite() => RuntimeGeneratedUiStyle.WhiteFallbackSprite();
 
     void EnsureMessageDialog()
     {
@@ -375,15 +369,15 @@ public class MenuSceneController : MonoBehaviour
         var panel = new GameObject("Box", typeof(Image));
         panel.transform.SetParent(root.transform, false);
         var pImg = panel.GetComponent<Image>();
-        pImg.sprite = white;
-        pImg.color = new Color(0.2f, 0.12f, 0.3f, 1f);
+        RuntimeGeneratedUiStyle.ApplyPanel(pImg);
         var prt = panel.GetComponent<RectTransform>();
         prt.anchorMin = new Vector2(0.5f, 0.5f);
         prt.anchorMax = new Vector2(0.5f, 0.5f);
         prt.pivot = new Vector2(0.5f, 0.5f);
-        prt.sizeDelta = new Vector2(480f, 220f);
+        prt.sizeDelta = new Vector2(520f, 248f);
         prt.anchoredPosition = Vector2.zero;
-        panel.AddComponent<Outline>().effectColor = new Color(0.9f, 0.75f, 0.3f);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+            panel.AddComponent<Outline>().effectColor = new Color(0.9f, 0.75f, 0.3f);
 
         var msgGo = new GameObject("Msg", typeof(TextMeshProUGUI));
         msgGo.transform.SetParent(panel.transform, false);
@@ -400,8 +394,7 @@ public class MenuSceneController : MonoBehaviour
         var okGo = new GameObject("OK", typeof(Image), typeof(Button));
         okGo.transform.SetParent(panel.transform, false);
         var okImg = okGo.GetComponent<Image>();
-        okImg.sprite = white;
-        okImg.color = new Color(0.45f, 0.3f, 0.65f);
+        RuntimeGeneratedUiStyle.ApplyButton(okImg);
         var okRt = okGo.GetComponent<RectTransform>();
         okRt.anchorMin = new Vector2(0.35f, 0.08f);
         okRt.anchorMax = new Vector2(0.65f, 0.22f);

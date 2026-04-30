@@ -137,7 +137,7 @@ public class TeachersLoginSceneController : MonoBehaviour
             return;
         }
 
-        var white = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 100f);
+        var white = RuntimeGeneratedUiStyle.WhiteFallbackSprite();
 
         var overlay = new GameObject("TeacherValidationOverlay", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
         overlay.transform.SetParent(canvas.transform, false);
@@ -161,18 +161,20 @@ public class TeachersLoginSceneController : MonoBehaviour
         var panelGo = new GameObject("Panel", typeof(Image));
         panelGo.transform.SetParent(overlay.transform, false);
         var panel = panelGo.GetComponent<Image>();
-        panel.sprite = white;
-        panel.color = new Color(0.18f, 0.1f, 0.28f, 1f);
+        RuntimeGeneratedUiStyle.ApplyPanel(panel);
         var panelRt = panel.rectTransform;
         panelRt.anchorMin = new Vector2(0.5f, 0.5f);
         panelRt.anchorMax = new Vector2(0.5f, 0.5f);
         panelRt.pivot = new Vector2(0.5f, 0.5f);
-        panelRt.sizeDelta = new Vector2(520f, 280f);
+        panelRt.sizeDelta = new Vector2(560f, 300f);
         panelRt.anchoredPosition = Vector2.zero;
 
-        var outline = panelGo.AddComponent<Outline>();
-        outline.effectColor = new Color(0.85f, 0.7f, 0.25f, 1f);
-        outline.effectDistance = new Vector2(2f, -2f);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+        {
+            var outline = panelGo.AddComponent<Outline>();
+            outline.effectColor = new Color(0.85f, 0.7f, 0.25f, 1f);
+            outline.effectDistance = new Vector2(2f, -2f);
+        }
 
         var titleGo = new GameObject("Title", typeof(TextMeshProUGUI));
         titleGo.transform.SetParent(panelGo.transform, false);
@@ -203,8 +205,7 @@ public class TeachersLoginSceneController : MonoBehaviour
         var btnGo = new GameObject("OK Button", typeof(Image), typeof(Button));
         btnGo.transform.SetParent(panelGo.transform, false);
         var btnImg = btnGo.GetComponent<Image>();
-        btnImg.sprite = white;
-        btnImg.color = new Color(0.45f, 0.28f, 0.65f, 1f);
+        RuntimeGeneratedUiStyle.ApplyButton(btnImg);
         var btnRt = btnGo.GetComponent<RectTransform>();
         btnRt.anchorMin = new Vector2(0.35f, 0.08f);
         btnRt.anchorMax = new Vector2(0.65f, 0.22f);

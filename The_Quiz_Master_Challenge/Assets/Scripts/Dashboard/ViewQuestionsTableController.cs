@@ -670,18 +670,21 @@ public class ViewQuestionsTableController : MonoBehaviour
         var blocker = overlay.AddComponent<Button>();
         blocker.onClick.AddListener(HideDeleteConfirm);
 
-        var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(Outline));
+        var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
         var panelRt = panel.GetComponent<RectTransform>();
         panelRt.SetParent(overlayRt, false);
         panelRt.anchorMin = new Vector2(0.5f, 0.5f);
         panelRt.anchorMax = new Vector2(0.5f, 0.5f);
         panelRt.pivot = new Vector2(0.5f, 0.5f);
-        panelRt.sizeDelta = new Vector2(700f, 290f);
+        panelRt.sizeDelta = new Vector2(720f, 308f);
         var panelImage = panel.GetComponent<Image>();
-        panelImage.color = new Color(0.11f, 0.06f, 0.28f, 0.98f);
-        var panelOutline = panel.GetComponent<Outline>();
-        panelOutline.effectColor = new Color(0.88f, 0.70f, 0.16f, 0.9f);
-        panelOutline.effectDistance = new Vector2(2f, -2f);
+        RuntimeGeneratedUiStyle.ApplyPanel(panelImage);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+        {
+            var panelOutline = panel.AddComponent<Outline>();
+            panelOutline.effectColor = new Color(0.88f, 0.70f, 0.16f, 0.9f);
+            panelOutline.effectDistance = new Vector2(2f, -2f);
+        }
 
         var panelLayout = panel.GetComponent<VerticalLayoutGroup>();
         panelLayout.padding = new RectOffset(30, 30, 22, 22);
@@ -749,19 +752,21 @@ public class ViewQuestionsTableController : MonoBehaviour
             typeof(RectTransform),
             typeof(Image),
             typeof(Button),
-            typeof(LayoutElement),
-            typeof(Outline));
+            typeof(LayoutElement));
         btnGo.transform.SetParent(parent, false);
 
         var le = btnGo.GetComponent<LayoutElement>();
-        le.preferredWidth = 190f;
-        le.preferredHeight = 62f;
+        le.preferredWidth = 208f;
+        le.preferredHeight = 68f;
 
         var img = btnGo.GetComponent<Image>();
-        img.color = color;
-        var outline = btnGo.GetComponent<Outline>();
-        outline.effectColor = new Color(1f, 1f, 1f, 0.22f);
-        outline.effectDistance = new Vector2(1f, -1f);
+        RuntimeGeneratedUiStyle.ApplyButton(img);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+        {
+            var outline = btnGo.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 1f, 1f, 0.22f);
+            outline.effectDistance = new Vector2(1f, -1f);
+        }
 
         var btn = btnGo.GetComponent<Button>();
         btn.targetGraphic = img;
@@ -779,7 +784,8 @@ public class ViewQuestionsTableController : MonoBehaviour
         tmp.text = label;
         tmp.fontSize = 30f;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.color = Color.white;
+        tmp.color = color;
+        tmp.fontStyle = FontStyles.Bold;
     }
 
     void HideDeleteConfirm()

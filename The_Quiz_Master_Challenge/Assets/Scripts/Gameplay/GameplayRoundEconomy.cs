@@ -487,7 +487,7 @@ public class GameplayRoundEconomy : MonoBehaviour
     {
         if (_eliminationOverlay != null) return;
 
-        var white = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 100f);
+        var white = RuntimeGeneratedUiStyle.WhiteFallbackSprite();
         var root = new GameObject("EliminationOverlay", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
         root.transform.SetParent(_canvasRoot, false);
         var canvas = root.GetComponent<Canvas>();
@@ -506,15 +506,15 @@ public class GameplayRoundEconomy : MonoBehaviour
         var panel = new GameObject("Panel", typeof(Image));
         panel.transform.SetParent(root.transform, false);
         var pImg = panel.GetComponent<Image>();
-        pImg.sprite = white;
-        pImg.color = new Color(0.14f, 0.08f, 0.24f, 1f);
+        RuntimeGeneratedUiStyle.ApplyPanel(pImg);
         var prt = panel.GetComponent<RectTransform>();
         prt.anchorMin = new Vector2(0.5f, 0.5f);
         prt.anchorMax = new Vector2(0.5f, 0.5f);
         prt.pivot = new Vector2(0.5f, 0.5f);
-        prt.sizeDelta = new Vector2(520f, 220f);
+        prt.sizeDelta = new Vector2(560f, 248f);
         prt.anchoredPosition = Vector2.zero;
-        panel.AddComponent<Outline>().effectColor = new Color(0.92f, 0.72f, 0.18f, 1f);
+        if (!RuntimeGeneratedUiStyle.UsePremiumChrome())
+            panel.AddComponent<Outline>().effectColor = new Color(0.92f, 0.72f, 0.18f, 1f);
 
         var bodyGo = new GameObject("Body", typeof(TextMeshProUGUI));
         bodyGo.transform.SetParent(panel.transform, false);
@@ -531,8 +531,7 @@ public class GameplayRoundEconomy : MonoBehaviour
         var btnGo = new GameObject("OK Button", typeof(Image), typeof(Button));
         btnGo.transform.SetParent(panel.transform, false);
         var bImg = btnGo.GetComponent<Image>();
-        bImg.sprite = white;
-        bImg.color = new Color(0.42f, 0.28f, 0.62f, 1f);
+        RuntimeGeneratedUiStyle.ApplyButton(bImg);
         var okRt = btnGo.GetComponent<RectTransform>();
         okRt.anchorMin = new Vector2(0.32f, 0.1f);
         okRt.anchorMax = new Vector2(0.68f, 0.26f);
