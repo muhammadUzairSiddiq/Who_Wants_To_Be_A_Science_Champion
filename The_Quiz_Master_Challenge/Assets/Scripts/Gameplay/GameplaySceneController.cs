@@ -143,6 +143,11 @@ public class GameplaySceneController : MonoBehaviour
     [SerializeField] Button lifelinePhoneButton;
 
 
+    [Header("Narrator (WebGL: browser text-to-speech)")]
+
+    [SerializeField] QuizVoiceDirector quizVoiceDirector;
+
+
 
     GameplayRoundEconomy _roundEconomy;
 
@@ -288,6 +293,18 @@ public class GameplaySceneController : MonoBehaviour
 
         _roundEconomy.Initialize(teamsDetailsRoot, transform);
 
+        if (quizVoiceDirector == null)
+
+            quizVoiceDirector = GetComponent<QuizVoiceDirector>();
+
+        if (quizVoiceDirector == null)
+
+            quizVoiceDirector = GetComponentInChildren<QuizVoiceDirector>(true);
+
+        if (quizVoiceDirector == null)
+
+            quizVoiceDirector = gameObject.AddComponent<QuizVoiceDirector>();
+
     }
 
 
@@ -331,6 +348,8 @@ public class GameplaySceneController : MonoBehaviour
         if (_lifelinePromptOkButton != null) _lifelinePromptOkButton.onClick.RemoveListener(HideLifelinePrompt);
 
 
+
+        quizVoiceDirector?.CancelSpeech();
 
         UnwireTeamSelectPopup();
 
@@ -1684,6 +1703,10 @@ public class GameplaySceneController : MonoBehaviour
 
         _introComplete = false;
 
+        if (quizVoiceDirector != null)
+
+            quizVoiceDirector.OnNewQuestionStarting();
+
         if (_teamPlayActive)
 
             SetTeamPickUiLocked(true);
@@ -1760,7 +1783,9 @@ public class GameplaySceneController : MonoBehaviour
 
         if (questionText != null)
 
-            yield return TypewriterTMP.Animate(questionText, data.Question, questionTypewriterMode, questionStepDelay);
+            yield return TypewriterTMP.Animate(questionText, data.Question, questionTypewriterMode, questionStepDelay,
+
+                () => quizVoiceDirector?.SpeakQuestion(data.Question));
 
 
 
@@ -1774,9 +1799,17 @@ public class GameplaySceneController : MonoBehaviour
 
             var line = $"{(char)('A' + i)}: {data.Options[i]}";
 
-            yield return TypewriterTMP.Animate(optionLabels[i], line, optionTypewriterMode, optionStepDelay);
+            var optIdx = i;
+
+            yield return TypewriterTMP.Animate(optionLabels[i], line, optionTypewriterMode, optionStepDelay,
+
+                () => quizVoiceDirector?.SpeakOption(optIdx, data.Options[optIdx]));
 
         }
+
+        if (quizVoiceDirector != null)
+
+            yield return quizVoiceDirector.WaitUntilSpeechIdle();
 
 
 
@@ -1787,6 +1820,14 @@ public class GameplaySceneController : MonoBehaviour
             yield return new WaitForSecondsRealtime(teamPlayPostOptionsDelaySeconds);
 
             yield return StartCoroutine(TeamSelectionPopupRoutine());
+
+            if (quizVoiceDirector != null && _teamPopupSelectedIndex >= 0 && _roundEconomy != null)
+
+                quizVoiceDirector.SpeakTeamWillAnswer(_roundEconomy.GetVoiceTeamDisplayName(_teamPopupSelectedIndex));
+
+            if (quizVoiceDirector != null)
+
+                yield return quizVoiceDirector.WaitUntilSpeechIdle();
 
         }
 
@@ -2658,6 +2699,32 @@ public class GameplaySceneController : MonoBehaviour
 
         SetLifelineButtonsInteractable(false);
 
+        if (quizVoiceDirector != null)
+
+        {
+
+            quizVoiceDirector.CancelSpeech();
+
+            var pickData = GetQuestionData();
+
+            var teamNm = string.Empty;
+
+            if (_teamPlayActive && _roundEconomy != null)
+
+            {
+
+                var ti = ResolveEconomyTeamIndex();
+
+                if (ti >= 0)
+
+                    teamNm = _roundEconomy.GetVoiceTeamDisplayName(ti);
+
+            }
+
+            quizVoiceDirector.SpeakChosenOptionImmediate(index, pickData, _teamPlayActive, teamNm);
+
+        }
+
 
 
         _advanceCoroutine = StartCoroutine(AnswerFeedbackAndAdvanceRoutine(index, correctIndex));
@@ -2670,17 +2737,33 @@ public class GameplaySceneController : MonoBehaviour
 
     {
 
+        var voiceData = GetQuestionData();
+
+        if (index < 0 && quizVoiceDirector != null)
+
+            quizVoiceDirector.SpeakTimeUpReveal(voiceData);
+
+        System.Action<bool> voiceJudgement = null;
+
+        if (index >= 0 && quizVoiceDirector != null)
+
+            voiceJudgement = correct => quizVoiceDirector.SpeakJudgement(correct);
+
         if (HasAnyOptionHighlighter())
 
-            yield return StartCoroutine(OptionHighlighterRevealRoutine(index, correctIndex));
+            yield return StartCoroutine(OptionHighlighterRevealRoutine(index, correctIndex, voiceJudgement));
 
         else
 
-            yield return StartCoroutine(LegacyOptionTintRevealRoutine(index, correctIndex));
+            yield return StartCoroutine(LegacyOptionTintRevealRoutine(index, correctIndex, voiceJudgement));
 
 
 
         yield return new WaitForSecondsRealtime(pauseBeforeNextQuestionSeconds);
+
+        if (quizVoiceDirector != null)
+
+            yield return quizVoiceDirector.WaitUntilSpeechIdle();
 
 
 
@@ -2760,7 +2843,7 @@ public class GameplaySceneController : MonoBehaviour
 
 
 
-    IEnumerator LegacyOptionTintRevealRoutine(int index, int correctIndex)
+    IEnumerator LegacyOptionTintRevealRoutine(int index, int correctIndex, System.Action<bool> onRevealJudgement)
 
     {
 
@@ -2786,6 +2869,10 @@ public class GameplaySceneController : MonoBehaviour
 
         }
 
+        if (index >= 0)
+
+            onRevealJudgement?.Invoke(correct);
+
 
 
         yield return new WaitForSecondsRealtime(optionRevealHoldSeconds);
@@ -2794,7 +2881,7 @@ public class GameplaySceneController : MonoBehaviour
 
 
 
-    IEnumerator OptionHighlighterRevealRoutine(int picked, int correctIndex)
+    IEnumerator OptionHighlighterRevealRoutine(int picked, int correctIndex, System.Action<bool> onRevealJudgement)
 
     {
 
@@ -2834,6 +2921,8 @@ public class GameplaySceneController : MonoBehaviour
 
             SetOptionHighlighterVisible(picked, true, optionCorrectBright);
 
+            onRevealJudgement?.Invoke(true);
+
             yield return StartCoroutine(PulseGraphicRoutine(_optionHighlighterGraphics[picked], optionCorrectBright, optionCorrectDim, optionBlinkPulseCount));
 
         }
@@ -2841,6 +2930,8 @@ public class GameplaySceneController : MonoBehaviour
         else
 
         {
+
+            onRevealJudgement?.Invoke(false);
 
             yield return StartCoroutine(PulseWrongAndCorrectRoutine(picked, correctIndex));
 
@@ -3249,6 +3340,8 @@ public class GameplaySceneController : MonoBehaviour
     void GoToMenu()
 
     {
+
+        quizVoiceDirector?.CancelSpeech();
 
         if (string.IsNullOrEmpty(menuSceneName)) return;
 

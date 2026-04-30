@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Text;
 using TMPro;
@@ -11,11 +12,20 @@ public enum TypewriterStepMode
 
 public static class TypewriterTMP
 {
-    public static IEnumerator Animate(TMP_Text tmp, string fullText, TypewriterStepMode mode, float stepDelaySeconds)
+    /// <param name="onFirstVisible">Invoked once when the first word or character is shown (before the first step delay).</param>
+    public static IEnumerator Animate(TMP_Text tmp, string fullText, TypewriterStepMode mode, float stepDelaySeconds, Action onFirstVisible = null)
     {
         if (tmp == null) yield break;
         tmp.text = string.Empty;
         if (string.IsNullOrEmpty(fullText)) yield break;
+
+        var fired = false;
+        void FireOnce()
+        {
+            if (fired) return;
+            fired = true;
+            onFirstVisible?.Invoke();
+        }
 
         if (mode == TypewriterStepMode.Words)
         {
@@ -26,6 +36,7 @@ public static class TypewriterTMP
                 if (w > 0) sb.Append(' ');
                 sb.Append(words[w]);
                 tmp.text = sb.ToString();
+                FireOnce();
                 if (stepDelaySeconds > 0f)
                     yield return new WaitForSecondsRealtime(stepDelaySeconds);
             }
@@ -35,6 +46,7 @@ public static class TypewriterTMP
             for (var c = 1; c <= fullText.Length; c++)
             {
                 tmp.text = fullText.Substring(0, c);
+                FireOnce();
                 if (stepDelaySeconds > 0f)
                     yield return new WaitForSecondsRealtime(stepDelaySeconds);
             }

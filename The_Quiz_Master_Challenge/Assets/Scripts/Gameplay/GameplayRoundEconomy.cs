@@ -473,6 +473,9 @@ public class GameplayRoundEconomy : MonoBehaviour
         return "Team " + (char)('A' + teamIndex);
     }
 
+    /// <summary>For narrator / UI: resolved display name for a team row.</summary>
+    public string GetVoiceTeamDisplayName(int teamIndex) => GetTeamDisplayName(teamIndex);
+
     IEnumerator ShowEliminationDialog(string message)
     {
         EnsureEliminationOverlay();
