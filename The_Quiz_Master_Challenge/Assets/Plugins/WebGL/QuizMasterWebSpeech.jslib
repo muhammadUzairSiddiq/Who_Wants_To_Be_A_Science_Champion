@@ -53,13 +53,13 @@ mergeInto(LibraryManager.library, {
         u.lang = "en-IN";
         var mood = item.mood | 0;
         if (mood === 1) {
-          u.rate = 1.06;
+          u.rate = 1.14;
           u.pitch = 1.1;
         } else if (mood === 2) {
-          u.rate = 0.84;
+          u.rate = 0.94;
           u.pitch = 0.9;
         } else {
-          u.rate = 0.93;
+          u.rate = 1.05;
           u.pitch = 0.98;
         }
         u.onend = function () {

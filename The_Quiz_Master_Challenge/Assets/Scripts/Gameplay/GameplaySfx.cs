@@ -17,6 +17,10 @@ public class GameplaySfx : MonoBehaviour
     [Tooltip("Looping timer bed.")]
     [SerializeField] AudioSource timerLoopSource;
 
+    [Tooltip("Timer loop volume while lifeline / correct / wrong Unity clips play.")]
+    [SerializeField, Range(0f, 1f)]
+    float timerBedVolumeDuringSfxConflict = 0.22f;
+
     [Header("Clips (Inspector or Resources: Audio / QuizMasterSfx / GameplayAudio)")]
     [SerializeField] AudioClip roundIntroClip;
 
@@ -38,7 +42,18 @@ public class GameplaySfx : MonoBehaviour
 
     bool _initialized;
 
+    float _timerNominalVolume = 1f;
+
+    float _timerDuckUntilUnscaled = float.NegativeInfinity;
+
     void Awake() => InitializeAudio();
+
+    void Update()
+    {
+        if (timerLoopSource == null || !timerLoopSource.isPlaying) return;
+        timerLoopSource.volume =
+            Time.unscaledTime < _timerDuckUntilUnscaled ? timerBedVolumeDuringSfxConflict : _timerNominalVolume;
+    }
 
     /// <summary>Called from <see cref="GameplaySceneController"/> Start so listeners/clips resolve after all Awakes.</summary>
     public void InitializeAudio()
@@ -147,6 +162,18 @@ public class GameplaySfx : MonoBehaviour
             Prep(timerLoopSource);
         }
         else Prep(timerLoopSource);
+
+        if (timerLoopSource != null)
+            _timerNominalVolume = timerLoopSource.volume;
+    }
+
+    void ExtendTimerBedDuckForClip(AudioClip clip)
+    {
+        if (clip == null || timerLoopClip == null || timerLoopSource == null || !timerLoopSource.isPlaying)
+            return;
+        var end = Time.unscaledTime + Mathf.Max(0.04f, clip.length);
+        if (end > _timerDuckUntilUnscaled)
+            _timerDuckUntilUnscaled = end;
     }
 
     /// <summary>
@@ -305,30 +332,40 @@ public class GameplaySfx : MonoBehaviour
     public void StartTimerLoop()
     {
         StopTimerLoop();
+        _timerDuckUntilUnscaled = float.NegativeInfinity;
         if (timerLoopClip == null || timerLoopSource == null) return;
         timerLoopSource.loop = true;
         timerLoopSource.clip = timerLoopClip;
+        timerLoopSource.volume = _timerNominalVolume;
         timerLoopSource.Play();
     }
 
     public void StopTimerLoop()
     {
+        _timerDuckUntilUnscaled = float.NegativeInfinity;
         if (timerLoopSource == null) return;
         timerLoopSource.Stop();
         timerLoopSource.clip = null;
+        timerLoopSource.volume = _timerNominalVolume;
     }
 
     public void PlayLifeline()
     {
         if (lifelineClip != null && oneShotSource != null)
+        {
+            ExtendTimerBedDuckForClip(lifelineClip);
             oneShotSource.PlayOneShot(lifelineClip);
+        }
     }
 
     public void PlayAnswerJudgement(bool correct)
     {
         var c = correct ? correctAnswerClip : wrongAnswerClip;
         if (c != null && oneShotSource != null)
+        {
+            ExtendTimerBedDuckForClip(c);
             oneShotSource.PlayOneShot(c);
+        }
     }
 
     public void PlayUiButtonClick()

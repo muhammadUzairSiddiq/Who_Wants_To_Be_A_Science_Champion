@@ -221,9 +221,9 @@ public static class QuizMasterWebSpeechBridge
 
             var rate = mood switch
             {
-                1 => 2,
-                2 => -2,
-                _ => 0
+                1 => 4,
+                2 => 0,
+                _ => 2
             };
 
             var escaped = EscapePowerShellSingleQuoted(text);

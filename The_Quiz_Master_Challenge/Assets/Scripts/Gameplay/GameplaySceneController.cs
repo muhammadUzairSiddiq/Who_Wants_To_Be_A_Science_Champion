@@ -200,6 +200,8 @@ public class GameplaySceneController : MonoBehaviour
 
     Coroutine _timerCoroutine;
 
+    bool _freezeQuestionTimerCountdown;
+
     Coroutine _introCoroutine;
 
     Coroutine _advanceCoroutine;
@@ -1778,6 +1780,8 @@ public class GameplaySceneController : MonoBehaviour
 
         StopTimerCoroutine();
 
+        _freezeQuestionTimerCountdown = false;
+
         _timeUpEnded = false;
 
         RefreshTimerLabelForNewRound();
@@ -1785,10 +1789,6 @@ public class GameplaySceneController : MonoBehaviour
 
 
         yield return StartCoroutine(ShowRoundBannerIfNeededRoutine());
-
-
-
-        var timerAfterFullIntro = true;
 
 
 
@@ -1874,6 +1874,12 @@ public class GameplaySceneController : MonoBehaviour
 
 
 
+        if (questionTimeSeconds > 0f && !_timeUpEnded)
+
+            gameplaySfx?.StartTimerLoop();
+
+
+
         if (questionText != null)
 
             yield return TypewriterTMP.Animate(questionText, data.Question, questionTypewriterMode, questionStepDelay,
@@ -1942,6 +1948,12 @@ public class GameplaySceneController : MonoBehaviour
 
 
 
+        if (questionTimeSeconds > 0f && !_timeUpEnded && _timerCoroutine == null)
+
+            _timerCoroutine = StartCoroutine(TimerRoutine(startTimerBed: false));
+
+
+
         if (_roundEconomy != null && !_roundEconomy.RunEnded)
 
             _roundEconomy.RefreshPrizeLadderDisplay();
@@ -1959,12 +1971,6 @@ public class GameplaySceneController : MonoBehaviour
 
 
         _introComplete = true;
-
-
-
-        if (timerAfterFullIntro && !_timeUpEnded)
-
-            _timerCoroutine = StartCoroutine(TimerRoutine());
 
 
 
@@ -2676,15 +2682,17 @@ public class GameplaySceneController : MonoBehaviour
 
 
 
-    IEnumerator TimerRoutine()
+    IEnumerator TimerRoutine(bool startTimerBed = true)
 
     {
 
-        gameplaySfx?.StartTimerLoop();
+        if (startTimerBed)
+
+            gameplaySfx?.StartTimerLoop();
 
         var remaining = questionTimeSeconds;
 
-        while (remaining > 0f && !_timeUpEnded)
+        while (remaining > 0f && !_timeUpEnded && !_freezeQuestionTimerCountdown)
 
         {
 
@@ -2698,11 +2706,31 @@ public class GameplaySceneController : MonoBehaviour
 
         }
 
+
+
+        _timerCoroutine = null;
+
+
+
+        if (_timeUpEnded)
+
+        {
+
+            gameplaySfx?.StopTimerLoop();
+
+            yield break;
+
+        }
+
+
+
+        if (_freezeQuestionTimerCountdown)
+
+            yield break;
+
+
+
         gameplaySfx?.StopTimerLoop();
-
-
-
-        if (_timeUpEnded) yield break;
 
 
 
@@ -2820,7 +2848,7 @@ public class GameplaySceneController : MonoBehaviour
 
 
 
-        StopTimerCoroutine();
+        _freezeQuestionTimerCountdown = true;
 
         SetAllOptionsInteractable(false);
 
