@@ -1506,6 +1506,7 @@ GameObject:
   - component: {fileID: 362807155}
   - component: {fileID: 362807159}
   - component: {fileID: 362807160}
+  - component: {fileID: 362807161}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1661,6 +1662,7 @@ MonoBehaviour:
   lifelineAudienceButton: {fileID: 0}
   lifelinePhoneButton: {fileID: 0}
   quizVoiceDirector: {fileID: 0}
+  gameplaySfx: {fileID: 0}
 --- !u!114 &362807160
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1683,6 +1685,30 @@ MonoBehaviour:
   popupRisePixels: 120
   flashColor: {r: 1, g: 1, b: 1, a: 0.12}
   flashDuration: 0.14
+  gameplaySfx: {fileID: 0}
+--- !u!114 &362807161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 362807154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eef15a905e0421549ac6c14275929b91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameplaySfx
+  blockingSource: {fileID: 0}
+  oneShotSource: {fileID: 0}
+  timerLoopSource: {fileID: 0}
+  roundIntroClip: {fileID: 8300000, guid: 27762820303dd414386d0cfd4e4fdde8, type: 3}
+  roundIntroOnlyOnRound01: 1
+  questionLeadInClip: {fileID: 8300000, guid: 909aae442064a974a9131bd9e9e086e4, type: 3}
+  lifelineClip: {fileID: 8300000, guid: 8d97603b6b74f594597409d8e49dc0ad, type: 3}
+  correctAnswerClip: {fileID: 8300000, guid: 5e1b40bed61f92d49ba39b6def5068a8, type: 3}
+  wrongAnswerClip: {fileID: 8300000, guid: 9b406eb39c2ad9749ab6b5105915a406, type: 3}
+  timerLoopClip: {fileID: 8300000, guid: 56e246717c6238e4bbfd4110d906d173, type: 3}
+  uiButtonClickClip: {fileID: 0}
 --- !u!1 &378261706
 GameObject:
   m_ObjectHideFlags: 0

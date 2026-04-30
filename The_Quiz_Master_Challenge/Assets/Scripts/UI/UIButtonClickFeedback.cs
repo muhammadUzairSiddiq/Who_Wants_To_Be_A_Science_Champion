@@ -41,10 +41,16 @@ public class UIButtonClickFeedback : MonoBehaviour
     readonly Dictionary<Button, Coroutine> _punches = new Dictionary<Button, Coroutine>();
     readonly Dictionary<Button, UnityAction> _registeredActions = new Dictionary<Button, UnityAction>();
 
+    [SerializeField] GameplaySfx gameplaySfx;
+
     void Awake()
     {
         _canvas = GetComponent<Canvas>();
         _canvasRect = _canvas.transform as RectTransform;
+        if (gameplaySfx == null)
+            gameplaySfx = GetComponent<GameplaySfx>() ?? GetComponentInParent<GameplaySfx>();
+        if (gameplaySfx == null)
+            gameplaySfx = UnityEngine.Object.FindFirstObjectByType<GameplaySfx>();
     }
 
     void OnEnable() => RegisterNewButtonsInHierarchy();
@@ -76,6 +82,7 @@ public class UIButtonClickFeedback : MonoBehaviour
     void OnButtonClicked(Button button)
     {
         if (button == null) return;
+        gameplaySfx?.PlayUiButtonClick();
         PlaySmartFeedback(button, null);
     }
 

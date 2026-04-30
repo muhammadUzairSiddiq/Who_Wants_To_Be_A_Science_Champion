@@ -148,6 +148,11 @@ public class GameplaySceneController : MonoBehaviour
     [SerializeField] QuizVoiceDirector quizVoiceDirector;
 
 
+    [Header("SFX (assign clips on GameplaySfx)")]
+
+    [SerializeField] GameplaySfx gameplaySfx;
+
+
 
     GameplayRoundEconomy _roundEconomy;
 
@@ -313,6 +318,8 @@ public class GameplaySceneController : MonoBehaviour
 
     {
 
+        ResolveGameplaySfx();
+
         LevelCompletionResults.Clear();
 
         _quizCategoryId = PlayerPrefs.GetString(StudentCredentials.PrefsSelectedQuizKey, "Math");
@@ -326,6 +333,60 @@ public class GameplaySceneController : MonoBehaviour
         _roundEconomy?.OnRunStarted(_teamPlayActive);
 
         _introCoroutine = StartCoroutine(IntroTypewriterRoutine());
+
+    }
+
+
+
+    void ResolveGameplaySfx()
+
+    {
+
+        var allSfx = GetComponentsInChildren<GameplaySfx>(true);
+
+        foreach (var g in allSfx)
+
+            if (g != null)
+
+                g.InitializeAudio();
+
+        if (gameplaySfx == null)
+
+        {
+
+            foreach (var g in allSfx)
+
+            {
+
+                if (g != null && g.HasAnyClipConfigured())
+
+                {
+
+                    gameplaySfx = g;
+
+                    break;
+
+                }
+
+            }
+
+
+
+            if (gameplaySfx == null && allSfx.Length > 0)
+
+                gameplaySfx = allSfx[0];
+
+        }
+
+
+
+        if (gameplaySfx == null)
+
+            gameplaySfx = gameObject.AddComponent<GameplaySfx>();
+
+
+
+        gameplaySfx.InitializeAudio();
 
     }
 
@@ -350,6 +411,8 @@ public class GameplaySceneController : MonoBehaviour
 
 
         quizVoiceDirector?.CancelSpeech();
+
+        gameplaySfx?.StopTimerLoop();
 
         UnwireTeamSelectPopup();
 
@@ -1729,13 +1792,29 @@ public class GameplaySceneController : MonoBehaviour
 
 
 
+        if (questionText != null)
+
+        {
+
+            questionText.text = string.Empty;
+
+            questionText.gameObject.SetActive(false);
+
+        }
+
+
+
         for (var i = 0; i < 4; i++)
 
         {
 
             if (optionLabels[i] != null)
 
-                optionLabels[i].gameObject.SetActive(true);
+                optionLabels[i].gameObject.SetActive(false);
+
+            if (optionButtons[i] != null)
+
+                optionButtons[i].gameObject.SetActive(false);
 
         }
 
@@ -1765,9 +1844,23 @@ public class GameplaySceneController : MonoBehaviour
 
         var data = GetQuestionData();
 
+        if (gameplaySfx != null)
+
+            yield return gameplaySfx.PlayQuestionLeadInAndWait();
 
 
-        if (questionText != null) questionText.text = string.Empty;
+
+        if (questionText != null)
+
+        {
+
+            questionText.gameObject.SetActive(true);
+
+            questionText.text = string.Empty;
+
+        }
+
+
 
         for (var i = 0; i < 4; i++)
 
@@ -1786,6 +1879,22 @@ public class GameplaySceneController : MonoBehaviour
             yield return TypewriterTMP.Animate(questionText, data.Question, questionTypewriterMode, questionStepDelay,
 
                 () => quizVoiceDirector?.SpeakQuestion(data.Question));
+
+
+
+        for (var i = 0; i < 4; i++)
+
+        {
+
+            if (optionButtons[i] != null)
+
+                optionButtons[i].gameObject.SetActive(true);
+
+            if (optionLabels[i] != null)
+
+                optionLabels[i].gameObject.SetActive(true);
+
+        }
 
 
 
@@ -2129,6 +2238,8 @@ public class GameplaySceneController : MonoBehaviour
 
         if (_timeUpEnded || !_introComplete || _fiftyUsedThisQuestion) return;
 
+        gameplaySfx?.PlayLifeline();
+
         var data = GetQuestionData();
 
         var correct = data.CorrectOptionIndex;
@@ -2191,6 +2302,8 @@ public class GameplaySceneController : MonoBehaviour
 
         if (_timeUpEnded || !_introComplete || _audienceUsedThisQuestion) return;
 
+        gameplaySfx?.PlayLifeline();
+
         _audienceUsedThisQuestion = true;
 
         if (lifelineAudienceButton != null) lifelineAudienceButton.interactable = false;
@@ -2208,6 +2321,8 @@ public class GameplaySceneController : MonoBehaviour
     {
 
         if (_timeUpEnded || !_introComplete || _phoneUsedThisQuestion) return;
+
+        gameplaySfx?.PlayLifeline();
 
         _phoneUsedThisQuestion = true;
 
@@ -2419,7 +2534,13 @@ public class GameplaySceneController : MonoBehaviour
 
         _roundBannerRoot.SetActive(true);
 
-        yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, roundBannerDisplaySeconds));
+        if (gameplaySfx != null)
+
+            yield return gameplaySfx.PlayRoundBannerIntroAndWait(_teacherSequentialIndex, roundBannerDisplaySeconds);
+
+        else
+
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, roundBannerDisplaySeconds));
 
         _roundBannerRoot.SetActive(false);
 
@@ -2559,6 +2680,8 @@ public class GameplaySceneController : MonoBehaviour
 
     {
 
+        gameplaySfx?.StartTimerLoop();
+
         var remaining = questionTimeSeconds;
 
         while (remaining > 0f && !_timeUpEnded)
@@ -2574,6 +2697,8 @@ public class GameplaySceneController : MonoBehaviour
             remaining -= Time.unscaledDeltaTime;
 
         }
+
+        gameplaySfx?.StopTimerLoop();
 
 
 
@@ -2679,6 +2804,8 @@ public class GameplaySceneController : MonoBehaviour
 
         }
 
+        gameplaySfx?.StopTimerLoop();
+
     }
 
 
@@ -2745,9 +2872,17 @@ public class GameplaySceneController : MonoBehaviour
 
         System.Action<bool> voiceJudgement = null;
 
-        if (index >= 0 && quizVoiceDirector != null)
+        if (index >= 0)
 
-            voiceJudgement = correct => quizVoiceDirector.SpeakJudgement(correct);
+            voiceJudgement = correct =>
+
+            {
+
+                quizVoiceDirector?.SpeakJudgement(correct);
+
+                gameplaySfx?.PlayAnswerJudgement(correct);
+
+            };
 
         if (HasAnyOptionHighlighter())
 
@@ -3342,6 +3477,8 @@ public class GameplaySceneController : MonoBehaviour
     {
 
         quizVoiceDirector?.CancelSpeech();
+
+        gameplaySfx?.StopTimerLoop();
 
         if (string.IsNullOrEmpty(menuSceneName)) return;
 
