@@ -1675,29 +1675,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 177552039}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8dfe4a1c9b6e4f2a903d5c7e1f4a6b0c, type: 3}
+  m_Script: {fileID: 11500000, guid: 4cd9ec435cb344848f665f582120b523, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MenuSceneController
-  gameplaySceneName: Gameplay
-  loginSceneName: Login
-  loadingDelaySeconds: 0.65
-  mainMenuPanel: {fileID: 0}
-  quizSelectionPanel: {fileID: 0}
-  teamSelectionPanel: {fileID: 0}
-  studentNameText: {fileID: 0}
-  studentRollText: {fileID: 0}
-  studentClassText: {fileID: 0}
-  coinsText: {fileID: 0}
-  quickPlayButton: {fileID: 0}
-  teamPlayButton: {fileID: 0}
-  teamContinueButton: {fileID: 0}
-  quizBackButton: {fileID: 0}
-  teamBackButton: {fileID: 0}
-  mainMenuBackButton: {fileID: 0}
-  logoutButton: {fileID: 0}
-  messageDialogRoot: {fileID: 0}
-  messageDialogText: {fileID: 0}
-  messageDialogOkButton: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::LevelCompletedSceneController
+  menuSceneName: Menu
 --- !u!114 &876543211
 MonoBehaviour:
   m_ObjectHideFlags: 0

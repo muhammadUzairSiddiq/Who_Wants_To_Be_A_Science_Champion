@@ -280,6 +280,7 @@ public class MenuSceneController : MonoBehaviour
             yield break;
         }
 
+        LevelCompletionResults.Clear();
         SceneManager.LoadScene(gameplaySceneName);
     }
 
