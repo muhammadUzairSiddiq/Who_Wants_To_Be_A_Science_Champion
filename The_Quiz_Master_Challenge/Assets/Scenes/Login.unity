@@ -886,10 +886,10 @@ RectTransform:
   - {fileID: 888992726}
   m_Father: {fileID: 1329081625}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 1}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -187.15942, y: -92.99182}
-  m_SizeDelta: {x: 328.0668, y: 107.409}
+  m_AnchorMin: {x: 0.8174377, y: 0.86300004}
+  m_AnchorMax: {x: 0.989, y: 0.96944445}
+  m_AnchoredPosition: {x: -0.6594238, y: -2.4918213}
+  m_SizeDelta: {x: -2.933197, y: -7.5910034}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &854801082
 MonoBehaviour:
@@ -1126,6 +1126,8 @@ MonoBehaviour:
   rollInputField: {fileID: 0}
   proceedButton: {fileID: 0}
   menuSceneName: Menu
+  teacherPortalButton: {fileID: 0}
+  teachersLoginSceneName: TeachersLogin
   minNameLength: 3
   maxNameLength: 64
   nameValidationPattern: ^[\p{L}][\p{L}\s'.-]{2,}$
@@ -1157,6 +1159,7 @@ MonoBehaviour:
   popupRisePixels: 120
   flashColor: {r: 1, g: 1, b: 1, a: 0.12}
   flashDuration: 0.14
+  gameplaySfx: {fileID: 0}
 --- !u!1 &1089223788
 GameObject:
   m_ObjectHideFlags: 0
